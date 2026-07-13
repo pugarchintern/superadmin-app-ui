@@ -54,7 +54,7 @@ export default function AppShell({ children }) {
 >
       
       {/* iPhone Notch */}
-      <div className="absolute top-[14px] left-1/2 -translate-x-1/2 w-[112px] h-[28px] bg-[#101915] rounded-[20px] z-40 max-sm:hidden"></div>
+      {/* <div className="absolute top-[14px] left-1/2 -translate-x-1/2 w-[112px] h-[28px] bg-[#101915] rounded-[20px] z-40 max-sm:hidden"></div> */}
       
       {/* Inner Screen */}
       <div className="relative w-full h-full bg-safai-bg rounded-[38px] overflow-hidden max-sm:rounded-none flex flex-col">

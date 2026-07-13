@@ -167,21 +167,21 @@ export default function Sidebar({ isOpen, onClose }) {
           <MenuSectionTitle title="Manage" />
           <CollapsibleMenu icon="map" label="Location Hierarchy" isOpen={openMenus["location"]} onToggle={() => toggleMenu("location")}>
             <DrawerSublink label="View Hierarchy" href="/locationHierarchy" />
-            <DrawerSublink label="Add Hierarchy" href="/add-zone-type_final" />
+            <DrawerSublink label="Add Hierarchy" href="/locationHierarchy/add" />
           </CollapsibleMenu>
 
           <CollapsibleMenu icon="list" label="Washrooms" badge="53" isOpen={openMenus["washrooms"]} onToggle={() => toggleMenu("washrooms")}>
-            <DrawerSublink label="Washroom List" href="/washroom_list" />
+            <DrawerSublink label="Washroom List" href="/washroom" />
             <DrawerSublink label="Add Washroom" href="/add_washroom" />
           </CollapsibleMenu>
 
           <CollapsibleMenu icon="users" label="User Management" badge="30" isOpen={openMenus["users"]} onToggle={() => toggleMenu("users")}>
-            <DrawerSublink label="User List" href="/user_manage-final" />
-            <DrawerSublink label="Add User" href="/add_user_final" />
+            <DrawerSublink label="User List" href="/userMangement" />
+            <DrawerSublink label="Add User" href="/userMangement/add" />
           </CollapsibleMenu>
 
           <CollapsibleMenu icon="share" label="User Mapping" isOpen={openMenus["mapping"]} onToggle={() => toggleMenu("mapping")}>
-            <DrawerSublink label="Mapped List" href="/cleaner-assignmentV2" />
+            <DrawerSublink label="Mapped List" href="/userMaping" />
             <DrawerSublink label="Add Mapping" href="/add_mapping" />
           </CollapsibleMenu>
 
