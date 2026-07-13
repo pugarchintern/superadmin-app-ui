@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+@theme inline {
+  /* Next.js Defaults */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* ── Safai Backgrounds & Surfaces ── */
+  --color-safai-bg: #F4F8F7;
+  --color-safai-surface: #FFFFFF;
+  --color-safai-surface-soft: #EFF6F4;
+  --color-safai-surface-tint: #E9F2FF;
+  --color-safai-border: #E4EEEC;
+
+  /* ── Safai Text ── */
+  --color-safai-text: #0E1913;
+  --color-safai-text-dim: #5C6B65;
+  --color-safai-text-faint: #93A19B;
+
+  /* ── Safai Primary (blue) ── */
+  --color-safai-primary: #3B82F6;
+  --color-safai-primary-2: #60A5FA;
+  --color-safai-primary-soft: #E6F0FF;
+  --color-safai-primary-deep: #1D4ED8;
+
+  /* ── Safai Violet ── */
+  --color-safai-violet: #7C6CF0;
+  --color-safai-violet-2: #A79BFF;
+  --color-safai-violet-soft: #EDEAFF;
+
+  /* ── Safai Lime / Sky ── */
+  --color-safai-lime: #38BDF8;
+  --color-safai-lime-2: #7DD3FC;
+  --color-safai-lime-soft: #E0F2FE;
+
+  /* ── Safai Blue accent ── */
+  --color-safai-blue: #3E8BFF;
+  --color-safai-blue-soft: #E9F1FF;
+
+  /* ── Safai Amber / CTA ── */
+  --color-safai-amber: #F0A527;
+  --color-safai-amber-soft: #FFF3DC;
+
+  /* ── Safai Coral ── */
+  --color-safai-coral: #FF6B57;
+  --color-safai-coral-soft: #FFE9E5;
+
+  /* ── Safai Red ── */
+  --color-safai-red: #E8435A;
+  --color-safai-red-soft: #FDE7EA;
+
+  /* ── Safai Shadows ── */
+  --shadow-safai-sm: 0 2px 10px rgba(30,58,138,.06);
+  --shadow-safai-md: 0 8px 24px rgba(30,58,138,.08);
+  --shadow-safai-glow: 0 10px 30px rgba(59,130,246,.18);
+
+  /* ── Typography ── */
+  /* Note: Assumes you will load Space Grotesk & Inter in layout.js. 
+     Alternatively, change these to var(--font-geist-sans) */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* ── Safai Animations ── */
+  --animate-pulseFloat: pulseFloat 9s ease-in-out infinite;
+  --animate-pulseFloatReverse: pulseFloat 11s ease-in-out infinite reverse;
+  --animate-livePulse: livePulse 2.4s ease-in-out infinite;
+  --animate-livePillPulse: livePillPulse 1.4s ease-in-out infinite;
+}
+
+/* Base Body Styles */
+body {
+  background: 
+    radial-gradient(circle at 12% 8%, rgba(59,130,246,.16), transparent 42%),
+    radial-gradient(circle at 88% 14%, rgba(56,189,248,.14), transparent 40%),
+    radial-gradient(circle at 50% 100%, rgba(29,78,216,.10), transparent 55%),
+    radial-gradient(circle at 50% 45%, rgba(255,255,255,.35), transparent 60%),
+    #EAF1EE;
+  color: var(--color-safai-text);
+  font-family: var(--font-body);
+}
+
+/* ── Keyframes ── */
+@keyframes pulseFloat {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(6px,-6px) scale(1.05); }
+}
+
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(125,211,252,.35); }
+  50% { box-shadow: 0 0 0 6px rgba(125,211,252,.15); }
+}
+
+@keyframes livePillPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .4; transform: scale(.7); }
+}
+
+/* ── Custom Utility Classes ── */
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar { 
+    display: none; 
+  }
+  .hide-scrollbar { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+  }
+  .tap-fx {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
