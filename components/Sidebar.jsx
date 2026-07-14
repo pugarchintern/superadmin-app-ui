@@ -182,7 +182,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
           <CollapsibleMenu icon="share" label="User Mapping" isOpen={openMenus["mapping"]} onToggle={() => toggleMenu("mapping")}>
             <DrawerSublink label="Mapped List" href="/userMaping" />
-            <DrawerSublink label="Add Mapping" href="/add_mapping" />
+            {/* <DrawerSublink label="Add Mapping" href="/add_mapping" /> */}
           </CollapsibleMenu>
 
           <CollapsibleMenu icon="facility" label="Facility Companies" isOpen={openMenus["facility"]} onToggle={() => toggleMenu("facility")}>
