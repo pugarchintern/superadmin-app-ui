@@ -56,6 +56,16 @@ export default function SystemConfigurations() {
     }
   ];
 
+
+  const addNewCategory = () => {
+    setSchemas([...schemas, {
+      id: `group-${Date.now()}`,
+      label: "New Category",
+      key: "new_category",
+      entities: []
+    }]);
+  };
+
   return (
     <main className="flex-1 p-4 space-y-4 pb-6">
       
@@ -248,6 +258,13 @@ export default function SystemConfigurations() {
               }} className="w-full py-2 bg-safai-surface border border-dashed border-safai-border rounded-xl flex items-center justify-center gap-1 text-[10px] font-black text-safai-primary hover:bg-safai-surface-soft transition"><Plus className="w-3.5 h-3.5 stroke-[3]" />ADD ENTITY</button>
             </div>
           ))}
+          <button 
+            onClick={addNewCategory}
+            className="w-full py-4 bg-safai-surface border-2 border-dashed border-safai-border rounded-2xl flex items-center justify-center gap-2 text-xs font-black text-safai-text-dim hover:border-safai-primary hover:text-safai-primary transition tap-fx"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            ADD NEW CATEGORY
+          </button>
         </div>
       )}
 
