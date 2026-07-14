@@ -196,7 +196,7 @@ export default function Sidebar({ isOpen, onClose }) {
           <DrawerLink icon="attendance" label="Attendance" href="/attendance" />
 
           <MenuSectionTitle title="System" />
-          <DrawerLink icon="settings" label="Dynamic Configuration" href="/settings" />
+          <DrawerLink icon="settings" label="Dynamic Configuration" href="/dynamic-configuration" />
           <DrawerLink icon="chat" label="User Review" href="/reviews" />
           <DrawerLink icon="report" label="Reports" href="/reports" />
 

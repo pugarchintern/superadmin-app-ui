@@ -1,180 +1,172 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  Users, Plus, Search, X, ChevronDown, List, Grid, Trash2, Calendar, MapPin
+  Share2, ArrowLeft, Users, Plus, MapPin, Calendar, ClipboardList
 } from 'lucide-react';
 
-export default function CleanerAssignments() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
-
-  // Mock Data matching the user interface view
-  const assignments = [
-    { id: 1, name: 'srujal mane', phone: '7887364232', role: 'CLEANER', initial: 'SM', location: 'Ground Floor Washroom', date: '6/30/2026', status: 'ASSIGNED' },
-    { id: 2, name: 'srujal mane', phone: '7887364232', role: 'CLEANER', initial: 'SM', location: 'Final Test', date: '6/30/2026', status: 'ASSIGNED' },
-    { id: 3, name: 'srujal mane', phone: '7887364232', role: 'CLEANER', initial: 'SM', location: 'Test-02', date: '6/30/2026', status: 'ASSIGNED', highlighted: true },
-    { id: 4, name: 'Anil Clener test', phone: '4234567891', role: 'CLEANER', initial: 'AC', location: 'Test89', date: '6/25/2026', status: 'ASSIGNED' },
-    { id: 5, name: 'Test-fsgs', phone: '4376777777', role: 'CLEANER', initial: 'TE', location: 'Test89', date: '6/25/2026', status: 'ASSIGNED' }
+export default function CreateAssignments() {
+  // Mock data matching the layout in your screenshot
+  const assignmentsList = [
+    {
+      index: 1,
+      name: "Rahul Sharma",
+      phone: "9876543210",
+      initials: "RS",
+      location: "Ground Floor - Washroom A",
+      role: "CLEANER",
+      date: "7/10/2026",
+      status: "ASSIGNED"
+    },
+    {
+      index: 2,
+      name: "Priya Kapoor",
+      phone: "9123456789",
+      initials: "PK",
+      location: "Floor 1 Lobby",
+      role: "SUPERVISOR",
+      date: "7/11/2026",
+      status: "ASSIGNED"
+    },
+    {
+      index: 3,
+      name: "Amit Patel",
+      phone: "9988776655",
+      initials: "AP",
+      location: "Ground Floor - Washroom B",
+      role: "CLEANER",
+      date: "7/12/2026",
+      status: "ASSIGNED"
+    }
   ];
 
   return (
     <main className="flex-1 p-4 space-y-4 pb-6">
       
-      {/* Module Headline Card */}
-      <div className="bg-safai-surface p-4 rounded-2xl border border-safai-border shadow-safai-sm space-y-3">
+      {/* Top Title Banner Card */}
+      <div className="bg-safai-surface p-4 rounded-2xl border border-safai-border shadow-safai-sm flex justify-between items-start">
         <div className="flex gap-3 items-center">
           <div className="w-10 h-10 bg-safai-primary text-white rounded-xl flex items-center justify-center shadow-md shadow-safai-primary/20 shrink-0">
-            <Users className="w-5 h-5" />
+            <Share2 className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-safai-text font-display">Cleaner Assignments</h1>
+            <h1 className="text-sm font-bold text-safai-text font-display">Create Assignments</h1>
             <p className="text-[9px] font-extrabold text-safai-text-faint tracking-wider uppercase">
-              System Personnel Mapping Registry
+              User Registry Mapping
             </p>
           </div>
         </div>
         
-        <button className="w-full flex items-center justify-center gap-1.5 bg-safai-amber text-white py-2 rounded-xl text-xs font-bold shadow-sm shadow-safai-amber/10 hover:opacity-90 transition tap-fx">
-          <Plus className="w-4 h-4 stroke-[3]" />
-          Add Cleaner
+        <button className="flex items-center gap-1 border border-safai-border text-safai-text-dim px-2.5 py-1 rounded-lg text-[10px] font-bold hover:bg-safai-surface-soft transition tap-fx shadow-sm">
+          <ArrowLeft className="w-3 h-3" />
+          Back
         </button>
       </div>
 
-      {/* Registry Metric Counter Cards */}
+      {/* Metrics Section Cards */}
       <div className="grid grid-cols-3 gap-2.5">
-        <div className="bg-safai-surface p-2.5 rounded-2xl border border-safai-primary/20 shadow-safai-sm flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[76px]">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-safai-primary" />
-          <span className="text-base font-black text-safai-text mt-1">125</span>
-          <span className="text-[7px] font-bold text-safai-text-faint tracking-wider uppercase mt-0.5">Total Staff</span>
-        </div>
-        
-        <div className="bg-safai-surface p-2.5 rounded-2xl border border-safai-lime/20 shadow-safai-sm flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[76px]">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-safai-lime" />
-          <span className="text-base font-black text-safai-text mt-1">125</span>
-          <span className="text-[7px] font-bold text-safai-text-faint tracking-wider uppercase mt-0.5">Assigned</span>
+        {/* Total Users */}
+        <div className="bg-safai-surface p-3 rounded-2xl border border-safai-border shadow-safai-sm flex flex-col justify-between min-h-[76px] relative overflow-hidden">
+          <div className="absolute top-0 left-0 bottom-0 w-1 bg-safai-primary" />
+          <div className="flex justify-between items-start pl-1">
+            <span className="text-[7px] font-bold text-safai-text-faint tracking-wider uppercase">Total Users</span>
+            <span className="text-base font-black text-safai-text leading-none">8</span>
+          </div>
+          <span className="text-[6px] font-bold text-safai-primary tracking-tight pl-1 uppercase mt-3">Registry</span>
         </div>
 
-        <div className="bg-safai-surface p-2.5 rounded-2xl border border-safai-coral/20 shadow-safai-sm flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[76px]">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-safai-coral" />
-          <span className="text-base font-black text-safai-text mt-1">0</span>
-          <span className="text-[7px] font-bold text-safai-text-faint tracking-wider uppercase mt-0.5">Unassigned</span>
+        {/* Assigned */}
+        <div className="bg-safai-surface p-3 rounded-2xl border border-safai-border shadow-safai-sm flex flex-col justify-between min-h-[76px] relative overflow-hidden">
+          <div className="absolute top-0 left-0 bottom-0 w-1 bg-safai-lime" />
+          <div className="flex justify-between items-start pl-1">
+            <span className="text-[7px] font-bold text-safai-text-faint tracking-wider uppercase">Assigned</span>
+            <span className="text-base font-black text-safai-text leading-none">3</span>
+          </div>
+          <span className="text-[6px] font-bold text-safai-lime tracking-tight pl-1 uppercase mt-3">of 8</span>
+        </div>
+
+        {/* Unassigned */}
+        <div className="bg-safai-surface p-3 rounded-2xl border border-safai-border shadow-safai-sm flex flex-col justify-between min-h-[76px] relative overflow-hidden">
+          <div className="absolute top-0 left-0 bottom-0 w-1 bg-safai-coral" />
+          <div className="flex justify-between items-start pl-1">
+            <span className="text-[7px] font-bold text-safai-text-faint tracking-wider uppercase">Unassigned</span>
+            <span className="text-base font-black text-safai-text leading-none">5</span>
+          </div>
+          <span className="text-[6px] font-bold text-safai-coral tracking-tight pl-1 uppercase mt-3">Needs mapping</span>
         </div>
       </div>
 
-      {/* Filter Control Options */}
-      <div className="space-y-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-safai-text-faint" />
-          <input 
-            type="text" 
-            placeholder="Search cleaner or location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-9 py-2.5 bg-safai-surface border border-safai-border rounded-xl text-xs text-safai-text placeholder:text-safai-text-faint focus:outline-none shadow-safai-sm"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-safai-text-faint hover:text-safai-text-dim">
-              <X className="w-4 h-4" />
-            </button>
-          )}
+      {/* Dynamic Header Section for Assignments List */}
+      <div className="flex justify-between items-center pt-2">
+        <div>
+          <h2 className="text-xs font-black text-safai-text uppercase tracking-wide">Assignments List</h2>
+          <p className="text-[8px] text-safai-text-faint font-medium">Tap a row to view details</p>
         </div>
-
-        {/* Horizontal Status Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pt-0.5 text-[10px] font-bold">
-          <button className="flex items-center gap-0.5 bg-safai-surface border border-safai-border px-2.5 py-1 rounded-lg text-safai-text-dim whitespace-nowrap tap-fx">
-            All Roles <ChevronDown className="w-3 h-3 text-safai-text-faint" />
-          </button>
-          <div className="h-4 w-px bg-safai-border mx-0.5" />
-          {['All', 'Assigned', 'Unassigned'].map((tab) => (
-            <button 
-              key={tab}
-              onClick={() => setActiveFilter(tab)}
-              className={`px-3 py-1 rounded-lg border whitespace-nowrap transition tap-fx ${
-                activeFilter === tab 
-                  ? 'bg-safai-primary/10 border-safai-primary text-safai-primary' 
-                  : 'bg-safai-surface border-safai-border text-safai-text-faint'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        <button className="flex items-center gap-1 bg-safai-lime text-safai-text font-black text-[10px] px-3 py-1.5 rounded-xl shadow-sm hover:opacity-90 transition tap-fx">
+          <Plus className="w-3.5 h-3.5 stroke-[3]" />
+          Add
+        </button>
       </div>
 
-      {/* Meta Pagination Row */}
-      <div className="flex justify-between items-center text-[10px] font-bold text-safai-text-dim pt-1">
-        <div>Showing <span className="text-safai-text">1-10</span> of <span className="text-safai-text">125</span> staff</div>
-        <div className="flex items-center gap-0.5 bg-safai-surface-soft p-0.5 rounded-lg border border-safai-border shadow-sm">
-          <button className="p-1 bg-safai-surface rounded-md text-safai-primary shadow-sm"><List className="w-3.5 h-3.5" /></button>
-          <button className="p-1 text-safai-text-faint hover:text-safai-text-dim"><Grid className="w-3.5 h-3.5" /></button>
-        </div>
-      </div>
+      {/* Nested Vertical Step Items Stack */}
+      <div className="space-y-4 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-safai-border/80">
+        {assignmentsList.map((item) => (
+          <div key={item.index} className="relative pl-6">
+            
+            {/* Round Step Badge Timeline Marker */}
+            <div className="absolute left-0 top-1.5 w-4 h-4 bg-safai-primary-soft text-safai-primary rounded-full flex items-center justify-center font-bold text-[8px] z-10 ring-4 ring-safai-bg">
+              {item.index}
+            </div>
 
-      {/* Assignments Display Stack */}
-      <div className="space-y-3">
-        {assignments.map((item) => (
-          <div 
-            key={item.id} 
-            className={`bg-safai-surface rounded-2xl border transition shadow-safai-sm overflow-hidden ${
-              item.highlighted ? 'border-safai-primary ring-1 ring-safai-primary/30' : 'border-safai-border'
-            }`}
-          >
-            <div className="p-3.5 space-y-3">
-              {/* Profile Card Header */}
+            {/* Core Row Data Layout Wrapper */}
+            <div className="bg-safai-surface rounded-2xl border border-safai-border shadow-safai-sm p-3.5 space-y-3">
+              
+              {/* Profile Block Meta */}
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 bg-safai-primary-soft text-safai-primary rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-sm border border-safai-primary/10">
-                    {item.initial}
+                  <div className="w-8 h-8 bg-safai-amber-soft text-safai-amber rounded-xl flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                    {item.initials}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-xs font-black text-safai-text truncate capitalize">{item.name}</h3>
-                    <p className="text-[9px] text-safai-text-faint font-medium flex items-center gap-1 mt-0.5">
-                      📞 <span className="text-safai-text-dim">{item.phone}</span>
-                    </p>
+                    <h3 className="text-xs font-black text-safai-text truncate">{item.name}</h3>
+                    <p className="text-[9px] text-safai-text-faint font-medium mt-0.5">{item.phone}</p>
                   </div>
                 </div>
-                <span className="bg-safai-primary-soft text-safai-primary text-[8px] font-black px-2 py-0.5 rounded border border-safai-primary/10 tracking-wider">
-                  {item.role}
+
+                <span className="bg-safai-lime-soft text-safai-lime border border-safai-lime/20 text-[7px] font-black px-1.5 py-0.5 rounded tracking-wider uppercase">
+                  {item.status}
                 </span>
               </div>
 
-              {/* Location and Date Grid Fields */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-safai-surface-soft/60 border border-safai-border rounded-xl p-2 flex flex-col min-w-0">
-                  <span className="text-[7px] font-bold text-safai-text-faint tracking-wider uppercase flex items-center gap-1">
-                    <MapPin className="w-2.5 h-2.5 text-safai-text-faint" /> Location
-                  </span>
-                  <span className="text-[10px] font-bold text-safai-text truncate mt-0.5">
+              {/* Functional Operational Scope Assignment Details */}
+              <div className="bg-safai-surface-soft/60 border border-safai-border rounded-xl p-2.5 space-y-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <MapPin className="w-3.5 h-3.5 text-safai-primary shrink-0" />
+                  <span className="text-[10px] font-bold text-safai-text truncate">
                     {item.location}
                   </span>
                 </div>
                 
-                <div className="bg-safai-surface-soft/60 border border-safai-border rounded-xl p-2 flex flex-col min-w-0">
-                  <span className="text-[7px] font-bold text-safai-text-faint tracking-wider uppercase flex items-center gap-1">
-                    <Calendar className="w-2.5 h-2.5 text-safai-text-faint" /> Assigned On
-                  </span>
-                  <span className="text-[10px] font-bold text-safai-text mt-0.5">
-                    {item.date}
-                  </span>
-                </div>
+                <span className={`inline-block text-[7px] font-black px-2 py-0.5 rounded tracking-wider ${
+                  item.role === 'SUPERVISOR' 
+                    ? 'bg-safai-primary-soft text-safai-primary' 
+                    : 'bg-safai-violet-soft text-safai-violet'
+                }`}>
+                  {item.role}
+                </span>
               </div>
 
-              {/* Action and Badge Footer Row */}
-              <div className="flex justify-between items-center pt-0.5">
-                <span className="bg-safai-surface-soft text-safai-lime text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-safai-border">
-                  <span className="w-1.5 h-1.5 bg-safai-lime rounded-full animate-livePillPulse" />
-                  {item.status}
-                </span>
-                
-                <button className="p-1.5 border border-safai-coral-soft bg-safai-coral-soft text-safai-coral rounded-lg hover:bg-safai-coral hover:text-white transition shadow-sm tap-fx">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+              {/* Timestamp Tracking Footer */}
+              <div className="flex items-center gap-1 text-[8px] font-bold text-safai-text-faint">
+                <Calendar className="w-3 h-3 text-safai-text-faint" />
+                <span>Assigned on: {item.date}</span>
               </div>
+
             </div>
           </div>
         ))}
       </div>
+
     </main>
   );
 }
