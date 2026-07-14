@@ -192,7 +192,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
           <MenuSectionTitle title="Operations" />
           <DrawerLink icon="pin" label="Locate On Map" href="/map" />
-          <DrawerLink icon="activity" label="Cleaner Activity" href="/activity" />
+          <DrawerLink icon="activity" label="Cleaner Activity" href="/cleaner-activity" />
           <DrawerLink icon="attendance" label="Attendance" href="/attendance" />
 
           <MenuSectionTitle title="System" />
