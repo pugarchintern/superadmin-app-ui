@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 
 /* ==========================================================================
    DATA & CONFIGURATION
@@ -63,9 +63,9 @@ const REPORT_DATA = {
     columns: ['#', 'CLEANER', 'PHONE', 'TOTAL', 'COMPLETED', 'ONGOING', 'INCOMPLETE', 'AVG SCORE', 'AVG DURATION', 'LAST ACTIVITY'],
     colTypes: ['plain', 'bold', 'plain', 'plain', 'plain', 'plain', 'plain', 'score', 'plain', 'plain'],
     rows: [
-      [1, 'srujal mane', '7887364232', 7, 6, 0, 1, '5.34', 5, '01 Jul 2026, 12:05 pm'],
-      [2, 'Omkar Cleaner', '9111111111', 6, 5, 0, 1, '8.07', 199, '30 Jun 2026, 05:59 pm'],
-      [3, 'Kartik Kanzode', '9822233344', 12, 12, 0, 0, '7.80', 108, '30 Jun 2026, 03:58 pm']
+      [1, 'srujal mane', '7887364232', 7, 6, 0, 1, '5.34', '5 min', '01 Jul 2026, 12:05 pm'],
+      [2, 'Omkar Cleaner', '9111111111', 6, 5, 0, 1, '8.07', '199 min', '30 Jun 2026, 05:59 pm'],
+      [3, 'Kartik Kanzode', '9822233344', 12, 12, 0, 0, '7.80', '108 min', '30 Jun 2026, 03:58 pm']
     ],
     scoreCols: [7], statusCol: -1
   },
@@ -127,7 +127,7 @@ const Icon = ({ name, className }) => {
     pin: <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>,
     calendar: <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>,
     award: <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6" /><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5" /></svg>,
-    trend: <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>
+    target: <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" /></svg>
   };
   return icons[name] || null;
 };
@@ -183,16 +183,34 @@ const ScorePill = ({ val }) => {
   return <span className={`inline-flex items-center py-0.5 px-1.5 rounded-full text-[10.5px] font-extrabold whitespace-nowrap ${cls}`}>{val}</span>;
 };
 
+const InsightChip = ({ icon, label, value, bg, fg, flagged }) => {
+  return (
+    <div className="flex-shrink-0 flex items-center gap-2 bg-gradient-to-br from-[#FFFFFF] to-[#E9F2FF] border border-[#E4EEEC] rounded-2xl py-2.5 pr-3.5 pl-2.5 shadow-[0_2px_10px_rgba(30,58,138,.06)]" style={flagged ? { backgroundColor: '#FDE7EA', borderColor: '#F6C7CE' } : {}}>
+      <div className="w-7 h-7 rounded-[9px] flex items-center justify-center flex-shrink-0" style={{ backgroundColor: bg, color: fg }}>
+        <Icon name={icon} className="w-4 h-4" />
+      </div>
+      <div className="min-w-0">
+        <div className="text-[12.5px] font-extrabold font-display leading-tight whitespace-nowrap" style={flagged ? { color: fg } : {}}>
+          {value}
+        </div>
+        <div className="text-[9px] text-[#93A19B] font-bold uppercase tracking-wide mt-0.5 whitespace-nowrap">
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ==========================================================================
    MAIN COMPONENT
    ========================================================================== */
-export default function SafaiReportsApp() {
+export default function SafaiReportsContent() {
   const [view, setView] = useState('config');
   const [activeModule, setActiveModule] = useState('Cleaning Report');
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [selectedCleanerId, setSelectedCleanerId] = useState(null);
-  
+  const [moduleDropdownOpen, setModuleDropdownOpen] = useState(false);
+
   // Form State
   const [startDate, setStartDate] = useState('13-07-2026');
   const [endDate, setEndDate] = useState('13-07-2026');
@@ -211,11 +229,35 @@ export default function SafaiReportsApp() {
     }, 2200);
   };
 
+  const handleDatePreset = (preset) => {
+    const today = new Date();
+    let start = new Date(today);
+    let end = new Date(today);
+
+    switch (preset) {
+      case 'today': break;
+      case 'yesterday':
+        start.setDate(start.getDate() - 1);
+        end.setDate(end.getDate() - 1);
+        break;
+      case '7d':
+        start.setDate(start.getDate() - 6);
+        break;
+      case 'month':
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        break;
+    }
+
+    const fmtDate = (d) => `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    setStartDate(fmtDate(start));
+    setEndDate(fmtDate(end));
+    triggerToast(`Date range set to ${preset}`);
+  };
+
   const handleGenerate = (e) => {
     e.preventDefault();
     triggerToast("Compiling metric analytical summary blocks...");
     
-    // Set generated timestamp
     const now = new Date();
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     let h12 = now.getHours() % 12 || 12;
@@ -240,295 +282,424 @@ export default function SafaiReportsApp() {
     if (matrixWrapRef.current) matrixWrapRef.current.scrollBy({ left: amount, behavior: 'smooth' });
   };
 
+  // Compute Smart Insights
+  const reportInsights = useMemo(() => {
+    if (!currentData) return [];
+    let chips = [];
+    if (currentData.isMatrixReport) {
+      const avgStat = currentData.stats.find((s) => s.label === 'Overall Avg Score');
+      const topStat = currentData.stats.find((s) => s.label === 'Top Performer');
+      if (avgStat) chips.push({ bg: '#E6F0FF', fg: '#1D4ED8', icon: 'target', value: `${avgStat.value} / 10`, label: 'Overall Avg' });
+      if (topStat) chips.push({ bg: '#FFF3DC', fg: '#9A6B00', icon: 'award', value: topStat.value, label: 'Top Performer' });
+    } else if (currentData.isCleanerList) {
+      if (currentData.topPerformers?.[0]) {
+        chips.push({ bg: '#FFF3DC', fg: '#9A6B00', icon: 'award', value: currentData.topPerformers[0], label: 'Top Performer' });
+      }
+    } else {
+      const completionStat = currentData.stats.find((s) => s.label === 'Completion Rate');
+      if (completionStat) chips.push({ bg: '#E8F5E9', fg: '#1E6B3D', icon: 'check', value: completionStat.value, label: 'Completion Rate' });
+    }
+    return chips;
+  }, [currentData]);
+
   return (
-    <div className="min-h-screen bg-[#F4F8F7] font-sans text-[#0E1913] antialiased flex flex-col items-center overflow-hidden relative">
-      
-      {/* Background Orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 flex justify-center max-w-4xl mx-auto">
-        <div className="absolute w-[84%] aspect-square rounded-full blur-[120px] top-[-10%] left-[-20%] bg-[#3B82F6]/16"></div>
-        <div className="absolute w-[80%] aspect-square rounded-full blur-[120px] top-[-5%] right-[-20%] bg-[#38BDF8]/14"></div>
-        <div className="absolute w-[110%] aspect-square rounded-full blur-[150px] bottom-[-30%] left-[50%] -translate-x-1/2 bg-[#1D4ED8]/10"></div>
+    <div className="w-full flex-1 relative font-sans text-[#0E1913]">
+      {/* Toast Stack */}
+      <div className="fixed left-4 right-4 bottom-6 z-50 flex flex-col items-center gap-2 pointer-events-none">
+        {toasts.map(toast => (
+          <div key={toast.id} className="bg-[#14231E] text-white text-[12.5px] font-semibold py-2.5 px-3.5 rounded-[13px] shadow-[0_10px_24px_rgba(10,25,20,0.35)] flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
+            <Icon name="check" className="w-3.5 h-3.5 text-[#60A5FA]" />
+            <span>{toast.msg}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Main Full-Screen App Container */}
-      <div className="relative z-10 w-full max-w-2xl h-screen flex flex-col bg-[#F4F8F7] shadow-2xl sm:border-x border-[#E4EEEC] overflow-hidden">
-        
-        {/* Topbar Header */}
-
-        {/* Main Scrollable Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <main className="p-4 md:p-6 pb-12">
-            {/* ================= CONFIG VIEW ================= */}
-            {view === 'config' && (
-              <div className="animate-in fade-in duration-300">
-                <div className="bg-[#FFFFFF] rounded-[20px] p-3.5 mb-4 border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)]">
-                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#5C6B65] mb-2.5 font-display">Report Modules</div>
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5" style={{ scrollbarWidth: 'none' }}>
-                    {Object.keys(REPORT_DATA).map(mod => (
-                      <button
-                        key={mod}
-                        onClick={() => { setActiveModule(mod); triggerToast(`Switched to ${mod}`); }}
-                        className={`flex-shrink-0 py-2 px-3.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 ${
-                          activeModule === mod 
-                            ? 'bg-[#E8F5E9] text-[#2E7D32] border-[#A5D6A7] font-bold' 
-                            : 'text-[#5C6B65] bg-[#EFF6F4] border-[#E4EEEC] hover:bg-[#E8F5E9] hover:text-[#2E7D32]'
-                        }`}
-                      >
-                        {mod === 'Washroom Hygiene Trend' ? 'Hygiene Trend' : mod}
-                      </button>
-                    ))}
-                  </div>
+      <div className="p-4 md:p-6 pb-24">
+        {/* ================= CONFIG VIEW ================= */}
+        {view === 'config' && (
+          <div className="animate-in fade-in duration-300">
+            {/* Hero Card */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#FFFFFF] to-[#E9F2FF] rounded-[20px] border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)] p-4 mb-4">
+              <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-[#3B82F6]/10 blur-2xl pointer-events-none"></div>
+              <div className="relative flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#3B82F6] to-[#60A5FA] text-white flex items-center justify-center flex-shrink-0 shadow-[0_10px_30px_rgba(59,130,246,.18)]">
+                  <Icon name="checklist" className="w-5 h-5" />
                 </div>
+                <div className="min-w-0">
+                  <h1 className="m-0 text-[18px] font-extrabold font-display tracking-tight leading-tight truncate">Analytics Reports</h1>
+                  <p className="m-0 mt-0.5 text-[10.5px] font-bold text-[#93A19B] uppercase tracking-wide">Select a module & configure parameters</p>
+                </div>
+              </div>
+            </div>
 
-                <div className="bg-gradient-to-br from-[#FFFFFF] to-[#E9F2FF] rounded-3xl p-5 border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)]">
-                  <div className="flex items-center gap-3 mb-6 pb-3.5 border-b border-[#E4EEEC]">
-                    <div className="w-9 h-9 rounded-xl bg-[#E6F0FF] text-[#1D4ED8] flex items-center justify-center">
-                      <Icon name="checklist" className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h2 className="m-0 text-[13.5px] font-extrabold font-display uppercase tracking-[0.01em] text-[#0E1913]">Configure {activeModule.split(' ')[0]}</h2>
-                      <p className="m-0 mt-0.5 text-[11px] text-[#93A19B] font-medium uppercase">Define your filters</p>
-                    </div>
-                  </div>
+            {/* Module Selector */}
+            <div className="relative z-20 bg-[#FFFFFF] rounded-[20px] p-3.5 mb-4 border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)]">
+              <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#5C6B65] mb-2.5">
+                Report Module
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setModuleDropdownOpen(!moduleDropdownOpen)}
+                className="w-full flex items-center justify-between gap-2 h-[52px] px-3 rounded-2xl border border-[#E4EEEC] bg-gradient-to-br from-[#EFF6F4] to-[#FFFFFF] active:scale-[0.98] transition-all"
+              >
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-8 h-8 rounded-xl bg-[#E5F5EF] text-[#0E7A56] flex items-center justify-center flex-shrink-0">
+                    <Icon name={currentData.isMatrixReport ? 'trend' : (currentData.isCleanerList ? 'user' : 'checklist')} className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="min-w-0 text-left">
+                    <span className="block text-[13.5px] font-bold text-[#0E1913] truncate font-display">{activeModule}</span>
+                    <span className="block text-[10px] font-semibold text-[#93A19B] uppercase tracking-wide">Tap to change module</span>
+                  </span>
+                </span>
+                <svg className={`w-4 h-4 text-[#93A19B] flex-shrink-0 transition-transform duration-200 ${moduleDropdownOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
 
-                  <form onSubmit={handleGenerate}>
-                    {['Zone', 'Location', 'Cleaner', 'Status'].map(label => (
-                      <div key={label} className="mb-4 relative">
-                        <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[#1D4ED8] mb-1.5 tracking-wider">
-                          <span className="w-3.5 h-3.5 text-[#3B82F6] inline-block rounded-full bg-[#E6F0FF]" /> {label}
-                        </label>
-                        <select className="w-full h-11 bg-[#EFF6F4] border border-[#E4EEEC] rounded-xl px-4 text-xs font-semibold text-[#0E1913] appearance-none outline-none focus:border-[#60A5FA] focus:bg-[#FFFFFF] transition-all">
+              {moduleDropdownOpen && (
+                <div className="mt-2 rounded-2xl border border-[#E4EEEC] bg-[#FFFFFF] shadow-[0_8px_24px_rgba(30,58,138,.08)] overflow-hidden divide-y divide-[#E4EEEC] animate-in fade-in slide-in-from-top-2">
+                  {Object.keys(REPORT_DATA).map(mod => (
+                    <button
+                      key={mod}
+                      onClick={() => { setActiveModule(mod); setModuleDropdownOpen(false); triggerToast(`Switched to ${mod}`); }}
+                      className={`w-full flex items-center justify-between gap-2 px-3.5 py-3 text-[13px] transition-colors ${activeModule === mod ? 'bg-[#E5F5EF] text-[#0E7A56] font-bold' : 'text-[#5C6B65] hover:bg-[#EFF6F4]'}`}
+                    >
+                      <span>{mod}</span>
+                      {activeModule === mod && <Icon name="check" className="w-3.5 h-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Configuration Form */}
+            <div className="bg-gradient-to-br from-[#FFFFFF] to-[#E9F2FF] rounded-3xl p-5 border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)]">
+              <div className="flex items-center gap-3 mb-6 pb-3.5 border-b border-[#E4EEEC]">
+                <div className="w-8.5 h-8.5 rounded-xl bg-[#E6F0FF] text-[#1D4ED8] flex items-center justify-center p-2">
+                   <Icon name="checklist" className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="m-0 text-[13.5px] font-extrabold font-display uppercase tracking-[0.01em]">Configure {activeModule.split(' ')[0]}</h2>
+                  <p className="m-0 mt-0.5 text-[11px] text-[#93A19B] font-medium uppercase">Define your filters</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleGenerate}>
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#93A19B] mb-2">Scope</div>
+                <div className="grid grid-cols-2 gap-3">
+                  {['Zone', 'Location'].map(label => (
+                    <div key={label} className="mb-4 relative">
+                      <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[#5C6B65] mb-1.5 tracking-wider">
+                        <Icon name={label === 'Zone' ? 'pin' : 'building'} className="w-3.5 h-3.5 text-[#3B82F6]" /> {label}
+                      </label>
+                      <div className="relative">
+                        <select className="w-full h-11 bg-[#EFF6F4] border border-[#E4EEEC] rounded-xl pl-4 pr-9 text-xs font-semibold text-[#0E1913] appearance-none outline-none focus:border-[#60A5FA] focus:bg-[#FFFFFF] transition-all">
                           <option>All {label}s</option>
                         </select>
-                        <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-[#93A19B]"></div>
-                      </div>
-                    ))}
-
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                      <div className="relative">
-                        <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[#1D4ED8] mb-1.5 tracking-wider">Start Date</label>
-                        <input type="text" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full h-11 bg-[#EFF6F4] border border-[#E4EEEC] rounded-xl pl-4 pr-9 text-xs font-semibold text-[#0E1913] outline-none" />
-                      </div>
-                      <div className="relative">
-                        <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[#1D4ED8] mb-1.5 tracking-wider">End Date</label>
-                        <input type="text" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full h-11 bg-[#EFF6F4] border border-[#E4EEEC] rounded-xl pl-4 pr-9 text-xs font-semibold text-[#0E1913] outline-none" />
+                        <svg className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#93A19B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                       </div>
                     </div>
-
-                    <div className="flex flex-col gap-2.5">
-                      <button type="submit" className="w-full h-11 rounded-xl text-[12.5px] font-bold font-display flex items-center justify-center gap-1.5 bg-[#F0A527] text-white shadow-[0_10px_30px_rgba(59,130,246,.18)] active:bg-[#E09517] active:scale-95 transition-all">
-                        GENERATE REPORT
-                      </button>
-                      <button type="button" onClick={() => triggerToast('Filters reset')} className="w-full h-11 bg-[#FFFFFF] border border-[#E4EEEC] rounded-xl text-[12.5px] font-bold text-[#5C6B65] font-display active:bg-[#EFF6F4] active:scale-95 transition-all">
-                        RESET FILTERS
-                      </button>
-                    </div>
-                  </form>
+                  ))}
                 </div>
-              </div>
-            )}
 
-            {/* ================= REPORT VIEW ================= */}
-            {view === 'report' && currentData && (
-              <div className="animate-in slide-in-from-right-4 duration-300">
-                <button onClick={() => setView('config')} className="inline-flex items-center gap-1.5 bg-[#FFFFFF] border border-[#E4EEEC] text-[#0E1913] text-[12.5px] font-bold py-2 px-3 rounded-xl mb-3 shadow-[0_2px_10px_rgba(30,58,138,.06)] active:scale-95 transition-transform">
-                  <svg className="w-3.5 h-3.5 text-[#5C6B65]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
-                  Back to filters
-                </button>
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#93A19B] mb-2 mt-1">Assignment</div>
+                <div className="grid grid-cols-2 gap-3">
+                  {['Cleaner', 'Status'].map(label => (
+                    <div key={label} className="mb-4 relative">
+                      <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[#5C6B65] mb-1.5 tracking-wider">
+                         <Icon name={label === 'Cleaner' ? 'user' : 'activity'} className="w-3.5 h-3.5 text-[#3B82F6]" /> {label}
+                      </label>
+                      <div className="relative">
+                        <select className="w-full h-11 bg-[#EFF6F4] border border-[#E4EEEC] rounded-xl pl-4 pr-9 text-xs font-semibold text-[#0E1913] appearance-none outline-none focus:border-[#60A5FA] focus:bg-[#FFFFFF] transition-all">
+                          <option>All {label}s</option>
+                        </select>
+                        <svg className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#93A19B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-                <div className="bg-gradient-to-br from-[#FFFFFF] to-[#E9F2FF] rounded-2xl p-4 mb-4 border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)]">
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="m-0 text-[16px] font-extrabold font-display leading-tight text-[#0E1913]">{currentData.title}</h2>
-                    <button onClick={() => setView('config')} className="w-8 h-8 rounded-lg bg-[#EFF6F4] border border-[#E4EEEC] flex items-center justify-center text-[#5C6B65] active:scale-95">
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#93A19B] mb-2 mt-1">Date Range</div>
+                <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                  {['Today', 'Yesterday', 'Last 7 Days', 'This Month'].map((preset) => (
+                    <button 
+                      key={preset} 
+                      type="button" 
+                      onClick={() => handleDatePreset(preset.toLowerCase().replace(' ', ''))}
+                      className="flex-shrink-0 py-1.5 px-3 rounded-full text-[10.5px] font-bold border border-[#E4EEEC] bg-[#EFF6F4] text-[#5C6B65] hover:bg-[#E6F0FF] hover:text-[#1D4ED8]"
+                    >
+                      {preset}
                     </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="relative">
+                    <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[#5C6B65] mb-1.5 tracking-wider">
+                      <Icon name="calendar" className="w-3.5 h-3.5 text-[#3B82F6]" /> Start Date
+                    </label>
+                    <input type="text" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full h-11 bg-[#EFF6F4] border border-[#E4EEEC] rounded-xl px-4 text-xs font-semibold text-[#0E1913] outline-none focus:border-[#60A5FA] focus:bg-[#FFFFFF]" />
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-2">
-                    <span className="inline-flex items-center gap-1.5 text-[11.5px] font-bold text-[#0E1913]">
-                      <span className="w-[7px] h-[7px] rounded-full bg-[#3B82F6] flex-shrink-0"></span> Corporate Building1
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-[#1D4ED8] bg-[#E6F0FF] py-1 px-2 rounded-full">
-                      <Icon name="calendar" className="w-3 h-3" /> {currentData.dateRangeLabel || `${startDate} to ${endDate}`}
-                    </span>
-                  </div>
-                  <div className="text-[10.5px] text-[#93A19B] font-semibold mt-1.5">Generated: {generatedDate}</div>
-                  
-                  <div className="flex items-center gap-2 mt-3.5">
-                    {['PDF', 'Excel', 'Print'].map((btn, i) => (
-                      <button key={btn} onClick={() => triggerToast(`Preparing ${btn}...`)} className={`flex-1 h-9 rounded-xl text-white text-[11px] font-bold font-display flex items-center justify-center gap-1 active:scale-95 transition-transform ${i===0?'bg-[#E8435A]':i===1?'bg-[#1E8E5A]':'bg-[#3B82F6]'}`}>
-                        {btn}
-                      </button>
-                    ))}
+                  <div className="relative">
+                    <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[#5C6B65] mb-1.5 tracking-wider">
+                      <Icon name="calendar" className="w-3.5 h-3.5 text-[#3B82F6]" /> End Date
+                    </label>
+                    <input type="text" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full h-11 bg-[#EFF6F4] border border-[#E4EEEC] rounded-xl px-4 text-xs font-semibold text-[#0E1913] outline-none focus:border-[#60A5FA] focus:bg-[#FFFFFF]" />
                   </div>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-2.5 mb-4">
-                  {currentData.stats.map((s, i) => {
-                    const t = TONE[s.tone];
-                    return (
-                      <div key={i} className={`rounded-xl p-3 border border-[#E4EEEC] ${t.bg}`}>
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[9.5px] font-extrabold uppercase tracking-wide ${t.text}`}>{s.label}</span>
-                          <span className={t.icon}><Icon name={s.icon} className="w-4 h-4" /></span>
-                        </div>
-                        <div className={`text-[19px] font-extrabold font-display mt-1 ${t.text}`}>{s.value}</div>
-                      </div>
-                    )
-                  })}
+                {/* Actions Stack */}
+                <div className="flex flex-col gap-2.5">
+                  <button type="submit" className="w-full h-11 rounded-xl text-[12.5px] font-bold font-display flex items-center justify-center gap-1.5 bg-gradient-to-br from-[#F0A527] to-[#E09517] text-white shadow-[0_4px_14px_-4px_rgba(240,165,39,0.6)] active:scale-[0.98] transition-all">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    GENERATE REPORT
+                  </button>
+                  <button type="button" onClick={() => triggerToast('Filters reset to default')} className="w-full h-11 bg-[#FFFFFF] border border-[#E4EEEC] rounded-xl text-[12.5px] font-bold text-[#5C6B65] font-display active:bg-[#EFF6F4] active:scale-[0.98] transition-all">
+                    RESET FILTERS
+                  </button>
                 </div>
-
-                {/* Matrix View OR Standard Table */}
-                {currentData.isMatrixReport ? (
-                  <div>
-                    <div className="bg-[#E6F0FF] border border-[#E4EEEC] rounded-xl py-2.5 px-3 mb-3 flex flex-col gap-2">
-                       <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-[#1D4ED8]">Scroll to view dates</span>
-                          <span className="text-[9px] font-mono font-bold bg-[#FFFFFF] border border-[#E4EEEC] rounded px-1.5 py-0.5 text-[#5C6B65]">Shift + Scroll</span>
-                       </div>
-                       <div className="flex items-center gap-2">
-                         <button onClick={() => scrollMatrix(-160)} className="w-7 h-7 rounded bg-[#FFFFFF] flex items-center justify-center border border-[#E4EEEC]">{'<'}</button>
-                         <div className="flex-1 h-1.5 bg-[#E4EEEC] rounded-full relative overflow-hidden">
-                           <div className="absolute top-0 bottom-0 left-0 bg-[#3B82F6] transition-all duration-150" style={{ width: `${Math.max(4, matrixScrollPct)}%` }}></div>
-                         </div>
-                         <button onClick={() => scrollMatrix(160)} className="w-7 h-7 rounded bg-[#FFFFFF] flex items-center justify-center border border-[#E4EEEC]">{'>'}</button>
-                       </div>
-                    </div>
-                    
-                    <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)] overflow-hidden mb-4">
-                      <div ref={matrixWrapRef} onScroll={handleMatrixScroll} className="overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                        <table className="border-collapse text-[11px] min-w-[600px]">
-                          <thead>
-                            <tr className="bg-[#EFF6F4] text-[#5C6B65]">
-                              {['WASHROOM', '15 JUN', '16 JUN', '17 JUN', 'AVG'].map(h => (
-                                <th key={h} className="text-left font-extrabold text-[9.5px] uppercase py-2.5 px-3 whitespace-nowrap">{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {currentData.matrixRows.map((row, i) => (
-                              <tr key={i} className={`border-t border-[#E4EEEC] ${i%2!==0?'bg-[#F4F8F7]/40':''}`}>
-                                <td className="py-2.5 px-3 font-extrabold text-[#0E1913]">{row.name}</td>
-                                {Object.values(row.scores).slice(0,3).map((score, idx) => (
-                                  <td key={idx} className="p-1">
-                                    <div className="h-9 rounded-lg flex items-center justify-center text-[11px] font-extrabold" style={{ backgroundColor: getHeatBg(score), color: getHeatText(score) }}>{score}</div>
-                                  </td>
-                                ))}
-                                <td className="p-1">
-                                  <div className="h-9 rounded-lg flex items-center justify-center text-[12px] font-extrabold border-2" style={{ backgroundColor: getHeatBg(row.average), color: getHeatText(row.average), borderColor: getHeatText(row.average)+'33' }}>{row.average}</div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)] overflow-hidden mb-4">
-                    <div className="overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                      <table className="border-collapse text-[11px] w-full min-w-[560px]">
-                        <thead>
-                          <tr className="bg-[#EFF6F4] text-[#5C6B65]">
-                            {currentData.columns.map((col, i) => (
-                              <th key={i} className="text-left font-extrabold text-[9.5px] uppercase py-2.5 px-3 whitespace-nowrap">{col}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentData.rows.map((row, rIdx) => (
-                            <tr 
-                              key={rIdx} 
-                              onClick={() => currentData.isCleanerList ? (setSelectedCleanerId(row[0]), setView('cleanerDetail')) : null}
-                              className={`border-t border-[#E4EEEC] ${rIdx%2!==0?'bg-[#F4F8F7]/40':''} ${currentData.isCleanerList ? 'cursor-pointer active:bg-[#E6F0FF]/60' : ''}`}
-                            >
-                              {row.map((cell, cIdx) => {
-                                const isScore = currentData.scoreCols?.includes(cIdx);
-                                const isStatus = currentData.statusCol === cIdx;
-                                return (
-                                  <td key={cIdx} className={`py-2.5 px-3 whitespace-nowrap text-[#0E1913] ${cIdx===1&&currentData.isCleanerList?'font-extrabold':''}`}>
-                                    {isStatus ? <StatusPill status={cell} /> : isScore ? <ScorePill val={cell} /> : cell}
-                                  </td>
-                                )
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ================= CLEANER DETAIL ================= */}
-            {view === 'cleanerDetail' && selectedCleanerId && CLEANER_PROFILES[selectedCleanerId] && (
-              <div className="animate-in slide-in-from-right-4 duration-300">
-                <button onClick={() => setView('report')} className="inline-flex items-center gap-1.5 bg-[#FFFFFF] border border-[#E4EEEC] text-[#0E1913] text-[12.5px] font-bold py-2 px-3 rounded-xl mb-3 shadow-[0_2px_10px_rgba(30,58,138,.06)] active:scale-95 transition-transform">
-                  <svg className="w-3.5 h-3.5 text-[#5C6B65]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
-                  Back to cleaners
-                </button>
-
-                <div className="bg-gradient-to-br from-[#FFFFFF] to-[#E9F2FF] rounded-2xl p-4 mb-4 border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)]">
-                   <h2 className="text-[16px] font-extrabold font-display leading-tight text-[#0E1913]">{CLEANER_PROFILES[selectedCleanerId].name}</h2>
-                   <div className="text-[11px] font-semibold text-[#5C6B65] mt-1">📞 {CLEANER_PROFILES[selectedCleanerId].phone}</div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5 mb-4">
-                  <div className="rounded-xl p-3 border border-[#E4EEEC] bg-[#E6F0FF]">
-                    <div className="text-[9.5px] font-extrabold uppercase tracking-wide text-[#1D4ED8]">Avg Score</div>
-                    <div className="text-[19px] font-extrabold font-display mt-1 text-[#1D4ED8]">{CLEANER_PROFILES[selectedCleanerId].stats.avgScore}</div>
-                  </div>
-                  <div className="rounded-xl p-3 border border-[#E4EEEC] bg-[#E8F5E9]">
-                    <div className="text-[9.5px] font-extrabold uppercase tracking-wide text-[#1E6B3D]">Completed Tasks</div>
-                    <div className="text-[19px] font-extrabold font-display mt-1 text-[#1E6B3D]">{CLEANER_PROFILES[selectedCleanerId].stats.completed}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </main>
-        </div>
-
-        {/* Toast Stack - Moved up since there is no bottom navbar */}
-        <div className="absolute left-4 right-4 bottom-6 z-50 flex flex-col items-center gap-2 pointer-events-none">
-          {toasts.map(toast => (
-            <div key={toast.id} className="bg-[#14231E] text-white text-[12.5px] font-semibold py-2.5 px-3.5 rounded-[13px] shadow-[0_8px_24px_rgba(30,58,138,.08)] flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
-              <Icon name="check" className="w-3.5 h-3.5 text-[#60A5FA]" />
-              <span>{toast.msg}</span>
+              </form>
             </div>
-          ))}
-        </div>
-
-        {/* Drawer Scrim */}
-        {drawerOpen && (
-          <div onClick={() => setDrawerOpen(false)} className="absolute inset-0 bg-[#0a1914]/40 backdrop-blur-[2px] z-[60] animate-in fade-in duration-200"></div>
+          </div>
         )}
 
-        {/* Drawer Menu */}
-        <aside className={`absolute top-0 bottom-0 left-0 w-[82%] max-w-[320px] bg-gradient-to-br from-[#FFFFFF] to-[#E9F2FF] z-[61] p-5 transition-transform duration-300 ease-out shadow-[0_8px_24px_rgba(30,58,138,.08)] flex flex-col ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          <button onClick={() => setDrawerOpen(false)} className="absolute top-4 right-4 w-[30px] h-[30px] rounded-[10px] bg-[#EFF6F4] flex items-center justify-center text-[#5C6B65] active:scale-95">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-          
-          <div className="border-b border-[#E4EEEC] rounded-xl -mx-1.5 mb-4 p-[10px_6px_18px_6px]">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-[15px] bg-gradient-to-br from-[#3B82F6] to-[#60A5FA] text-white flex items-center justify-center font-extrabold font-display">OP</div>
-              <div>
-                <div className="text-[14.5px] font-bold font-display text-[#0E1913]">Omkar Porlikar</div>
-                <div className="text-[10px] font-extrabold text-[#1D4ED8] tracking-wider mt-0.5">SUPER ADMIN</div>
+        {/* ================= REPORT VIEW ================= */}
+        {view === 'report' && currentData && (
+          <div className="animate-in slide-in-from-right-4 duration-300">
+            <button onClick={() => setView('config')} className="inline-flex items-center gap-1.5 bg-[#FFFFFF] border border-[#E4EEEC] text-[#0E1913] text-[12.5px] font-bold py-2 px-3 rounded-xl mb-3 shadow-[0_2px_10px_rgba(30,58,138,.06)] active:scale-[0.96] transition-transform">
+              <svg className="w-3.5 h-3.5 text-[#5C6B65]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+              Back to filters
+            </button>
+
+            {/* Header Card */}
+            <div className="bg-gradient-to-br from-[#FFFFFF] to-[#E9F2FF] rounded-2xl p-4 mb-4 border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)]">
+              <div className="flex items-start justify-between gap-2">
+                <h2 className="m-0 text-[16px] font-extrabold font-display leading-tight text-[#0E1913]">{currentData.title}</h2>
+                <button onClick={() => setView('config')} className="w-8 h-8 rounded-lg bg-[#EFF6F4] border border-[#E4EEEC] flex items-center justify-center text-[#5C6B65] active:scale-95">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-2">
+                <span className="inline-flex items-center gap-1.5 text-[11.5px] font-bold text-[#0E1913]">
+                  <span className="w-[7px] h-[7px] rounded-full bg-[#3B82F6] flex-shrink-0"></span> Corporate Building1
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-[#1D4ED8] bg-[#E6F0FF] py-1 px-2 rounded-full">
+                  <Icon name="calendar" className="w-3 h-3" /> {currentData.dateRangeLabel || `${startDate} to ${endDate}`}
+                </span>
+              </div>
+              <div className="text-[10.5px] text-[#93A19B] font-semibold mt-1.5">Generated: {generatedDate}</div>
+              
+              <div className="flex items-center gap-2 mt-3.5">
+                {['PDF', 'Excel', 'Print'].map((btn, i) => (
+                  <button key={btn} onClick={() => triggerToast(`Preparing ${btn}...`)} className={`flex-1 h-9 rounded-xl text-white text-[11px] font-bold font-display flex items-center justify-center gap-1 active:scale-[0.96] transition-transform ${i===0?'bg-[#E8435A]':i===1?'bg-[#1E8E5A]':'bg-[#3B82F6]'}`}>
+                    {btn}
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
 
-          <div className="flex-1 overflow-y-auto no-scrollbar -mx-4 px-4 pb-10" style={{ scrollbarWidth: 'none' }}>
-             <div className="text-[10px] font-extrabold tracking-widest uppercase text-[#93A19B] mt-2 mb-2">System</div>
-             {['Main Dashboard', 'Location Hierarchy', 'User Management', 'Dynamic Configuration', 'Reports'].map(link => (
-               <button key={link} onClick={() => { setDrawerOpen(false); triggerToast(`Opened ${link}`); }} className={`w-full flex items-center gap-3 p-3 rounded-xl text-[13.5px] font-semibold transition-all ${link === 'Reports' ? 'bg-[#E6F0FF] text-[#1D4ED8] font-bold' : 'text-[#0E1913] hover:bg-[#EFF6F4]'}`}>
-                 {link}
-               </button>
-             ))}
+            {/* Smart Insights */}
+            {reportInsights.length > 0 && (
+              <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-4" style={{ scrollbarWidth: 'none' }}>
+                {reportInsights.map((insight, i) => (
+                  <InsightChip key={i} {...insight} />
+                ))}
+              </div>
+            )}
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-2.5 mb-4">
+              {currentData.stats.map((s, i) => {
+                const t = TONE[s.tone];
+                return (
+                  <div key={i} className={`rounded-xl p-3 border border-[#E4EEEC] ${t.bg}`}>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[9.5px] font-extrabold uppercase tracking-wide ${t.text}`}>{s.label}</span>
+                      <span className={t.icon}><Icon name={s.icon} className="w-4 h-4" /></span>
+                    </div>
+                    <div className={`text-[19px] font-extrabold font-display mt-1 ${t.text}`}>{s.value}</div>
+                    {s.suffix && <div className={`text-[9.5px] font-semibold opacity-70 mt-0.5 ${t.text}`}>{s.suffix}</div>}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Top Performers (Cleaner Only) */}
+            {currentData.topPerformers && (
+               <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)] p-4 mb-4">
+                 <div className="text-[13px] font-extrabold font-display text-[#0E1913] mb-2.5">Top Performers (Avg Score)</div>
+                 <ol className="flex flex-col gap-2">
+                   {currentData.topPerformers.map((name, i) => (
+                      <li key={i} className="flex items-center gap-2.5 text-[12.5px] font-semibold text-[#0E1913]">
+                        <span className="w-5 h-5 rounded-full bg-[#E6F0FF] text-[#1D4ED8] text-[10px] font-extrabold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        <span className="truncate">{name}</span>
+                      </li>
+                   ))}
+                 </ol>
+               </div>
+            )}
+
+            {/* Matrix View OR Standard Table */}
+            {currentData.isMatrixReport ? (
+              <div>
+                <div className="bg-[#E6F0FF] border border-[#E4EEEC] rounded-xl py-2.5 px-3 mb-3 flex flex-col gap-2">
+                   <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[#1D4ED8]">💡 Scroll to view dates</span>
+                      <span className="text-[9px] font-mono font-bold bg-[#FFFFFF] border border-[#E4EEEC] rounded px-1.5 py-0.5 text-[#5C6B65]">Shift + Scroll</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <button onClick={() => scrollMatrix(-160)} className="w-7 h-7 rounded-lg bg-[#FFFFFF] flex items-center justify-center border border-[#E4EEEC] active:scale-95 text-[#5C6B65]">{'<'}</button>
+                     <div className="flex-1 h-1.5 bg-[#E4EEEC] rounded-full relative overflow-hidden">
+                       <div className="absolute top-0 bottom-0 left-0 bg-[#3B82F6] transition-all duration-150" style={{ width: `${Math.max(4, matrixScrollPct)}%` }}></div>
+                     </div>
+                     <button onClick={() => scrollMatrix(160)} className="w-7 h-7 rounded-lg bg-[#FFFFFF] flex items-center justify-center border border-[#E4EEEC] active:scale-95 text-[#5C6B65]">{'>'}</button>
+                   </div>
+                </div>
+                
+                <div className="flex items-center justify-between gap-3 mb-3 px-0.5">
+                  <div className="flex items-center gap-1.5 text-[9.5px] font-bold text-[#93A19B]">
+                    <span className="w-3.5 h-3.5 rounded-[4px] flex-shrink-0 bg-[repeating-linear-gradient(135deg,#EEF2F1,#EEF2F1_3px,#E4EAE8_3px,#E4EAE8_6px)]"></span>
+                    No visit
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-1 max-w-[190px]">
+                    <span className="text-[9px] font-extrabold text-[#93A19B]">Low</span>
+                    <span className="flex-1 h-2 rounded-full" style={{ background: 'linear-gradient(90deg,#F6B0B9,#FBDE9C,#93DDB2)' }}></span>
+                    <span className="text-[9px] font-extrabold text-[#93A19B]">High</span>
+                  </div>
+                </div>
+
+                <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)] overflow-hidden mb-4">
+                  <div ref={matrixWrapRef} onScroll={handleMatrixScroll} className="overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                    <table className="border-collapse text-[11px] min-w-[600px]">
+                      <thead>
+                        <tr className="bg-[#EFF6F4] text-[#5C6B65]">
+                          {['WASHROOM', '15 JUN', '16 JUN', '17 JUN', 'AVG'].map(h => (
+                            <th key={h} className="text-left font-extrabold text-[9.5px] uppercase tracking-wide py-2.5 px-3 whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentData.matrixRows.map((row, i) => (
+                          <tr key={i} className={`border-t border-[#E4EEEC] ${i%2!==0?'bg-[#F4F8F7]/40':''}`}>
+                            <td className="py-2.5 px-3 font-extrabold text-[#0E1913]">{row.name} <span className="block font-semibold text-[10px] text-[#93A19B]">{row.location}</span></td>
+                            {Object.values(row.scores).slice(0,3).map((score, idx) => (
+                              <td key={idx} className="p-1">
+                                <div className="h-9 rounded-lg flex items-center justify-center text-[11px] font-extrabold" style={{ backgroundColor: getHeatBg(score), color: getHeatText(score) }}>{score}</div>
+                              </td>
+                            ))}
+                            <td className="p-1">
+                              <div className="h-9 rounded-lg flex items-center justify-center text-[12px] font-extrabold border-2" style={{ backgroundColor: getHeatBg(row.average), color: getHeatText(row.average), borderColor: getHeatText(row.average)+'33' }}>{row.average}</div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)] overflow-hidden mb-4">
+                {currentData.sectionTitle && <div className="text-[13px] font-extrabold font-display text-[#0E1913] py-3 px-4 border-b border-[#E4EEEC]">{currentData.sectionTitle}</div>}
+                <div className="overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                  <table className="border-collapse text-[11px] w-full min-w-[560px]">
+                    <thead>
+                      <tr className="bg-[#EFF6F4] text-[#5C6B65]">
+                        {currentData.columns.map((col, i) => (
+                          <th key={i} className="text-left font-extrabold text-[9.5px] uppercase py-2.5 px-3 whitespace-nowrap">{col}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentData.rows.map((row, rIdx) => (
+                        <tr 
+                          key={rIdx} 
+                          onClick={() => currentData.isCleanerList ? (setSelectedCleanerId(row[0]), setView('cleanerDetail')) : null}
+                          className={`border-t border-[#E4EEEC] ${rIdx%2!==0?'bg-[#F4F8F7]/40':''} ${currentData.isCleanerList ? 'cursor-pointer active:bg-[#E6F0FF]/60' : ''}`}
+                        >
+                          {row.map((cell, cIdx) => {
+                            const isScore = currentData.scoreCols?.includes(cIdx);
+                            const isStatus = currentData.statusCol === cIdx;
+                            return (
+                              <td key={cIdx} className={`py-2.5 px-3 whitespace-nowrap text-[#0E1913] ${cIdx===1&&currentData.isCleanerList?'font-extrabold':''}`}>
+                                {isStatus ? <StatusPill status={cell} /> : isScore ? <ScorePill val={cell} /> : cell}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
-        </aside>
+        )}
+
+        {/* ================= CLEANER DETAIL ================= */}
+        {view === 'cleanerDetail' && selectedCleanerId && CLEANER_PROFILES[selectedCleanerId] && (
+          <div className="animate-in slide-in-from-right-4 duration-300">
+            <button onClick={() => setView('report')} className="inline-flex items-center gap-1.5 bg-[#FFFFFF] border border-[#E4EEEC] text-[#0E1913] text-[12.5px] font-bold py-2 px-3 rounded-xl mb-3 shadow-[0_2px_10px_rgba(30,58,138,.06)] active:scale-[0.96] transition-transform">
+              <svg className="w-3.5 h-3.5 text-[#5C6B65]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+              Back to cleaners
+            </button>
+
+            <div className="bg-gradient-to-br from-[#FFFFFF] to-[#E9F2FF] rounded-2xl p-4 mb-4 border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)]">
+               <div className="flex items-center gap-3">
+                 <div className="w-11 h-11 rounded-[15px] bg-gradient-to-br from-[#3B82F6] to-[#60A5FA] text-white flex items-center justify-center font-extrabold font-display text-[15px]">{CLEANER_PROFILES[selectedCleanerId].name.split(' ').map((n)=>n[0]).join('').substring(0,2).toUpperCase()}</div>
+                 <div>
+                   <h2 className="text-[16px] font-extrabold font-display leading-tight text-[#0E1913] m-0">{CLEANER_PROFILES[selectedCleanerId].name}</h2>
+                   <div className="text-[11px] font-semibold text-[#5C6B65] mt-1 flex items-center gap-1">
+                      <svg className="w-3 h-3 text-[#93A19B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                      {CLEANER_PROFILES[selectedCleanerId].phone}
+                   </div>
+                 </div>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5 mb-4">
+              <div className="rounded-xl p-3 border border-[#E4EEEC] bg-[#E6F0FF]">
+                <div className="text-[9.5px] font-extrabold uppercase tracking-wide text-[#1D4ED8]">Avg Score</div>
+                <div className="text-[19px] font-extrabold font-display mt-1 text-[#1D4ED8]">{CLEANER_PROFILES[selectedCleanerId].stats.avgScore}</div>
+              </div>
+              <div className="rounded-xl p-3 border border-[#E4EEEC] bg-[#E8F5E9]">
+                <div className="text-[9.5px] font-extrabold uppercase tracking-wide text-[#1E6B3D]">Completed</div>
+                <div className="text-[19px] font-extrabold font-display mt-1 text-[#1E6B3D]">{CLEANER_PROFILES[selectedCleanerId].stats.completed}</div>
+              </div>
+              <div className="rounded-xl p-3 border border-[#E4EEEC] bg-[#FFF3DC]">
+                <div className="text-[9.5px] font-extrabold uppercase tracking-wide text-[#9A6B00]">Total Tasks</div>
+                <div className="text-[19px] font-extrabold font-display mt-1 text-[#9A6B00]">{CLEANER_PROFILES[selectedCleanerId].stats.total}</div>
+              </div>
+            </div>
+
+            <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EEEC] shadow-[0_2px_10px_rgba(30,58,138,.06)] overflow-hidden mb-4">
+                <div className="text-[13px] font-extrabold font-display text-[#0E1913] py-3 px-4 border-b border-[#E4EEEC]">Task History</div>
+                <div className="overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                  <table className="border-collapse text-[11px] w-full min-w-[560px]">
+                    <thead>
+                      <tr className="bg-[#EFF6F4] text-[#5C6B65]">
+                        {CLEANER_PROFILES[selectedCleanerId].taskColumns.map((col, i) => (
+                          <th key={i} className="text-left font-extrabold text-[9.5px] uppercase py-2.5 px-3 whitespace-nowrap">{col}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {CLEANER_PROFILES[selectedCleanerId].tasks.map((row, rIdx) => (
+                        <tr key={rIdx} className={`border-t border-[#E4EEEC] ${rIdx%2!==0?'bg-[#F4F8F7]/40':''}`}>
+                          {row.map((cell, cIdx) => {
+                            const isScore = [5, 6].includes(cIdx);
+                            const isStatus = cIdx === 7;
+                            return (
+                              <td key={cIdx} className={`py-2.5 px-3 whitespace-nowrap text-[#0E1913] ${cIdx===1?'font-extrabold':''}`}>
+                                {isStatus ? <StatusPill status={cell} /> : isScore ? <ScorePill val={cell} /> : cell}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+          </div>
+        )}
       </div>
     </div>
   );
