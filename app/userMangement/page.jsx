@@ -277,11 +277,11 @@ export default function UserManagement() {
         <>
           {/* Backdrop Scrim */}
           <div 
-            className="absolute inset-0 bg-safai-text/40 backdrop-blur-sm z-[90] animate-in airy-fade-in duration-200" 
+            className="absolute inset-0 bg-safai-text/40 backdrop-blur-sm z-90 animate-in airy-fade-in duration-200" 
             onClick={() => setEditSheet({ show: false, targetMember: null })} 
           />
           {/* Drawer Wrapper Sheet */}
-          <div className="absolute left-0 right-0 bottom-0 bg-safai-surface border-t border-safai-border rounded-t-[26px] z-[91] p-4 space-y-4 shadow-2xl max-h-[92%] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+          <div className="absolute left-0 right-0 bottom-0 bg-safai-surface border-t border-safai-border rounded-t-[26px] z-91 p-4 space-y-4 shadow-2xl max-h-[92%] overflow-y-auto animate-in slide-in-from-bottom duration-300">
             <div className="w-10 h-1 bg-safai-border rounded-full mx-auto" />
             
             <div className="flex justify-between items-center">

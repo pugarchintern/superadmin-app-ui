@@ -366,7 +366,7 @@ const SUPERADMIN_MENU = [
   {
     title: "System & Support",
     items: [
-      { label: "System Limits", href: "/system-limits", icon: "settings" },
+      { label: "System Limits", href: "/system-limit", icon: "settings" },
       { label: "Service Request", href: "/serviceRequest", icon: "report" },
       { label: "Photo Gallery", href: "/photo", icon: "grid" },
     ],

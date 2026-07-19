@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Search, ChevronDown, Users, Plus, Mail, Phone, 
-  Calendar, Eye, Edit3, Trash2, ArrowLeft, X, 
+  Calendar, Eye, Edit3, Trash2, X, 
   ShieldAlert, User, Shield, Building2, Save, 
   ChevronLeft, ChevronRight, Loader2
 } from 'lucide-react';
@@ -32,8 +32,11 @@ export default function SuperadminManagement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const PAGE_SIZE = 5;
 
-  // ---- Modals & Bottom Sheets Controllers ----
-  const [formSheet, setFormSheet] = useState({ show: false, mode: 'add', superadminId: null });
+  // ---- Track inline placement states ----
+  const [editingSuperadminId, setEditingSuperadminId] = useState(null);
+  const [showAddInline, setShowAddInline] = useState(false);
+
+  // ---- Global Modal Overlays ----
   const [profileSheet, setProfileSheet] = useState({ show: false, superadmin: null });
   const [deleteDialog, setDeleteDialog] = useState({ show: false, superadmin: null });
   const [statusDialog, setStatusDialog] = useState({ show: false, superadmin: null });
@@ -57,13 +60,11 @@ export default function SuperadminManagement() {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
 
-  // ---- Computed Extracted Company Lists ----
   const uniqueCompanies = useMemo(() => {
     const sets = new Set(superadmins.map(s => s.company).filter(Boolean));
     return Array.from(sets).sort();
   }, [superadmins]);
 
-  // ---- Filter and Search Computations ----
   const filteredSuperadmins = useMemo(() => {
     return superadmins.filter(u => {
       const matchesCompany = !companyFilter 
@@ -93,20 +94,22 @@ export default function SuperadminManagement() {
   const activeCount = useMemo(() => filteredSuperadmins.filter(s => s.status === 'Active').length, [filteredSuperadmins]);
   const inactiveCount = filteredSuperadmins.length - activeCount;
 
-  // ---- Core Trigger Operations ----
-  const openFormSheet = (mode = 'add', superadmin = null) => {
-    if (mode === 'edit' && superadmin) {
-      setFormData({
-        name: superadmin.name, email: superadmin.email || '', phone: superadmin.phone || '', age: superadmin.age || '',
-        company: superadmin.company || '', password: '', confirmPassword: '', isNewCompany: false, newCompanyName: ''
-      });
-      setFormSheet({ show: true, mode: 'edit', superadminId: superadmin.id });
-    } else {
-      setFormData({
-        name: '', email: '', phone: '', age: '', company: '', password: '', confirmPassword: '', isNewCompany: false, newCompanyName: ''
-      });
-      setFormSheet({ show: true, mode: 'add', superadminId: null });
-    }
+  // ---- Inline Setup Core Handlers ----
+  const startInlineEdit = (superadmin) => {
+    setShowAddInline(false);
+    setEditingSuperadminId(superadmin.id);
+    setFormData({
+      name: superadmin.name, email: superadmin.email || '', phone: superadmin.phone || '', age: superadmin.age || '',
+      company: superadmin.company || '', password: '', confirmPassword: '', isNewCompany: false, newCompanyName: ''
+    });
+  };
+
+  const startInlineAdd = () => {
+    setEditingSuperadminId(null);
+    setFormData({
+      name: '', email: '', phone: '', age: '', company: '', password: '', confirmPassword: '', isNewCompany: false, newCompanyName: ''
+    });
+    setShowAddInline(true);
   };
 
   const handleStatusToggleRequest = (superadmin) => {
@@ -132,7 +135,7 @@ export default function SuperadminManagement() {
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = (e, mode, targetId = null) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
@@ -143,16 +146,17 @@ export default function SuperadminManagement() {
 
     setIsSubmitting(true);
     setTimeout(() => {
-      if (formSheet.mode === 'edit') {
-        setSuperadmins(prev => prev.map(s => s.id === formSheet.superadminId ? {
+      if (mode === 'edit') {
+        setSuperadmins(prev => prev.map(s => s.id === targetId ? {
           ...s,
           name: formData.name.trim(),
           email: formData.email.trim() || null,
           phone: formData.phone.trim() || null,
           age: formData.age.trim() || null,
           company: assignedCompany || null,
-          updated: "Jul 17, 2026"
-        } : a));
+          updated: "Jul 20, 2026"
+        } : s));
+        setEditingSuperadminId(null);
       } else {
         const nextId = superadmins.length > 0 ? Math.max(...superadmins.map(s => s.id)) + 1 : 1;
         setSuperadmins(prev => [{
@@ -163,18 +167,18 @@ export default function SuperadminManagement() {
           age: formData.age.trim() || null,
           company: assignedCompany || null,
           status: "Active",
-          created: "Jul 17, 2026",
-          updated: "Jul 17, 2026"
+          created: "Jul 20, 2026",
+          updated: "Jul 20, 2026"
         }, ...prev]);
+        setShowAddInline(false);
         setCurrentPage(1);
       }
       setIsSubmitting(false);
-      setFormSheet({ show: false, mode: 'add', superadminId: null });
     }, 500);
   };
 
   return (
-    <main className="flex-1 p-4 space-y-4 pb-24 relative">
+    <main className="w-full min-h-full bg-safai-bg text-safai-text select-none p-4 pt-6 space-y-4">
       
       {/* Sub Header Segment Block */}
       <div className="bg-safai-surface p-4 rounded-2xl border border-safai-border shadow-safai-sm flex justify-between items-center">
@@ -184,9 +188,7 @@ export default function SuperadminManagement() {
           </div>
           <div>
             <h1 className="text-sm font-bold text-safai-text font-display">Superadmin Management</h1>
-            <p className="text-[9px] font-extrabold text-safai-text-faint tracking-wider uppercase">
-              Manage all superadmin users
-            </p>
+            <p className="text-[9px] font-extrabold text-safai-text-faint tracking-wider uppercase">Manage all superadmin users</p>
           </div>
         </div>
       </div>
@@ -236,10 +238,7 @@ export default function SuperadminManagement() {
                 {filteredSuperadmins.length === 0 ? (
                   "No matches"
                 ) : inactiveCount === 0 ? (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#159A6B]" /> 
-                    {"All active"}
-                  </>
+                  <><span className="w-1.5 h-1.5 rounded-full bg-[#159A6B]" /> All active</>
                 ) : (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-[#159A6B]" /> {activeCount} active
@@ -251,24 +250,41 @@ export default function SuperadminManagement() {
             </div>
           </div>
 
-          <button onClick={() => openFormSheet('add')} className="flex items-center gap-1 bg-gradient-to-br from-[#3B82F6] to-[#60A5FA] text-white px-3.5 py-2.5 rounded-xl text-xs font-black shadow-safai-glow hover:opacity-90 transition shrink-0 tap-fx">
-            <Plus className="w-4 h-4 stroke-[3]" />
-            Add
-          </button>
+          {!showAddInline && (
+            <button onClick={startInlineAdd} className="flex items-center gap-1 bg-gradient-to-br from-[#3B82F6] to-[#60A5FA] text-white px-3.5 py-2.5 rounded-xl text-xs font-black shadow-safai-glow hover:opacity-90 transition shrink-0">
+              <Plus className="w-4 h-4 stroke-[3]" /> Add
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Dynamic Inline Configuration Box: Add Superadmin */}
+      {showAddInline && (
+        <div className="bg-safai-surface rounded-2xl border-2 border-[#3B82F6]/40 p-4 shadow-lg space-y-3.5 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex justify-between items-center border-b border-safai-border pb-2">
+            <h3 className="text-xs font-black text-safai-text flex items-center gap-1">
+              <Plus className="w-4 h-4 text-[#3B82F6] stroke-[2.5]" /> Setup New Superadmin Account
+            </h3>
+            <button type="button" onClick={() => setShowAddInline(false)} className="p-0.5 hover:bg-safai-surface-soft text-safai-text-faint rounded-lg"><X className="w-4 h-4" /></button>
+          </div>
+          {renderFormEngine('add', null)}
+        </div>
+      )}
 
       {/* Primary Cards Roster Block Stack Container */}
       <div className="space-y-3 pt-1">
         {paginatedSuperadmins.map((superadmin, idx) => {
           const globalIdx = (currentPage - 1) * PAGE_SIZE + idx + 1;
           const color = avatarPalettes[globalIdx % avatarPalettes.length];
+          const isEditingThis = editingSuperadminId === superadmin.id;
           
           return (
             <div 
               key={superadmin.id}
-              onClick={() => setProfileSheet({ show: true, superadmin })}
-              className="bg-safai-surface rounded-2xl border border-safai-border shadow-safai-sm p-3.5 space-y-3 transition cursor-pointer hover:border-safai-primary/20"
+              onClick={() => !isEditingThis && setProfileSheet({ show: true, superadmin })}
+              className={`bg-safai-surface rounded-2xl border p-3.5 space-y-3 transition-all duration-200 shadow-safai-sm ${
+                isEditingThis ? 'border-[#3B82F6] ring-2 ring-[#E6F0FF] shadow-md' : 'border-safai-border cursor-pointer hover:border-safai-primary/20'
+              }`}
             >
               <div className="flex justify-between items-start gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -277,57 +293,74 @@ export default function SuperadminManagement() {
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-xs font-black text-safai-text truncate">{superadmin.name}</h3>
-                    <div className="text-[10px] text-safai-text-dim font-medium flex items-center gap-1 truncate mt-0.5">
-                      <Mail className="w-3 h-3 text-safai-text-faint shrink-0" />
-                      <span>{superadmin.email || "No email added"}</span>
-                    </div>
-                    <div className="text-[10px] text-safai-text-dim font-medium flex items-center gap-1 truncate mt-0.5">
-                      <Phone className="w-3 h-3 text-safai-text-faint shrink-0" />
-                      <span>{superadmin.phone || "N/A"}</span>
-                    </div>
+                    {!isEditingThis && (
+                      <>
+                        <div className="text-[10px] text-safai-text-dim font-medium flex items-center gap-1 truncate mt-0.5">
+                          <Mail className="w-3 h-3 text-safai-text-faint shrink-0" />
+                          <span>{superadmin.email || "No email added"}</span>
+                        </div>
+                        <div className="text-[10px] text-safai-text-dim font-medium flex items-center gap-1 truncate mt-0.5">
+                          <Phone className="w-3 h-3 text-safai-text-faint shrink-0" />
+                          <span>{superadmin.phone || "N/A"}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 {/* Status Switch Interactive Slider Element */}
-                <button 
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleStatusToggleRequest(superadmin); }}
-                  className="flex items-center gap-1.5 bg-none border-none p-0 shrink-0 select-none cursor-pointer"
-                >
-                  <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border tracking-wide uppercase ${
-                    superadmin.status === 'Active' 
-                      ? 'bg-[#E3FAEC] text-[#159A6B] border-emerald-500/10' 
-                      : 'bg-[#FDE7EA] text-[#E8435A] border-red-500/10'
-                  }`}>
-                    {superadmin.status}
-                  </span>
-                  <div className={`w-8 h-4.5 rounded-full p-0.5 transition-colors duration-200 relative ${superadmin.status === 'Active' ? 'bg-[#159A6B]' : 'bg-safai-border'}`}>
-                    <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 ${superadmin.status === 'Active' ? 'translate-x-3.5' : 'translate-x-0'}`} />
-                  </div>
-                </button>
+                {!isEditingThis && (
+                  <button 
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleStatusToggleRequest(superadmin); }}
+                    className="flex items-center gap-1.5 bg-none border-none p-0 shrink-0 select-none cursor-pointer"
+                  >
+                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border tracking-wide uppercase ${
+                      superadmin.status === 'Active' 
+                        ? 'bg-[#E3FAEC] text-[#159A6B] border-emerald-500/10' 
+                        : 'bg-[#FDE7EA] text-[#E8435A] border-red-500/10'
+                    }`}>
+                      {superadmin.status}
+                    </span>
+                    <div className={`w-8 h-4.5 rounded-full p-0.5 transition-colors duration-200 relative ${superadmin.status === 'Active' ? 'bg-[#159A6B]' : 'bg-safai-border'}`}>
+                      <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 ${superadmin.status === 'Active' ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                    </div>
+                  </button>
+                )}
               </div>
 
-              <div className="border-t border-dashed border-safai-border pt-2.5 flex justify-between items-end gap-2">
-                <div className="text-[9px] font-bold text-safai-text-faint space-y-0.5 min-w-0">
-                  <div className="truncate">ID: <b className="text-safai-text-dim font-extrabold font-display">#{superadmin.id}</b></div>
-                  <div className="truncate">Role: <b className="text-safai-text-dim font-extrabold">Superadmin</b></div>
-                  <div className="truncate flex items-center gap-0.5">
-                    <Calendar className="w-2.5 h-2.5" /> Created On: <b className="text-safai-text-dim font-extrabold">{superadmin.created}</b>
+              {/* View Configuration Layout Options vs Inline Active Forms */}
+              {!isEditingThis ? (
+                <div className="border-t border-dashed border-safai-border pt-2.5 flex justify-between items-end gap-2">
+                  <div className="text-[9px] font-bold text-safai-text-faint space-y-0.5 min-w-0">
+                    <div className="truncate">ID: <b className="text-safai-text-dim font-extrabold font-display">#{superadmin.id}</b></div>
+                    <div className="truncate">Company: <b className="text-safai-text-dim font-extrabold">{superadmin.company || "—"}</b></div>
+                    <div className="truncate flex items-center gap-0.5">
+                      <Calendar className="w-2.5 h-2.5" /> Created On: <b className="text-safai-text-dim font-extrabold">{superadmin.created}</b>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => setProfileSheet({ show: true, superadmin })} className="p-1.5 bg-safai-primary-soft text-safai-primary border border-safai-primary-soft rounded-lg hover:bg-safai-primary hover:text-white transition shadow-sm">
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => startInlineEdit(superadmin)} className="p-1.5 bg-[#FFF3DC] text-[#F0A527] border border-[#FFF3DC] rounded-lg hover:bg-[#F0A527] hover:text-white transition shadow-sm">
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setDeleteDialog({ show: true, superadmin })} className="p-1.5 bg-safai-red-soft text-safai-red border border-safai-red-soft rounded-lg hover:bg-safai-red hover:text-white transition shadow-sm">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => setProfileSheet({ show: true, superadmin })} className="p-1.5 bg-safai-primary-soft text-safai-primary border border-safai-primary-soft rounded-lg hover:bg-safai-primary hover:text-white transition shadow-sm tap-fx">
-                    <Eye className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => openFormSheet('edit', superadmin)} className="p-1.5 bg-[#FFF3DC] text-[#F0A527] border border-[#FFF3DC] rounded-lg hover:bg-[#F0A527] hover:text-white transition shadow-sm tap-fx">
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => setDeleteDialog({ show: true, superadmin })} className="p-1.5 bg-safai-red-soft text-safai-red border border-safai-red-soft rounded-lg hover:bg-safai-red hover:text-white transition shadow-sm tap-fx">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+              ) : (
+                <div className="pt-2 border-t border-safai-border" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex justify-between items-center mb-2.5">
+                    <span className="text-[10px] font-bold text-[#3B82F6] uppercase tracking-wider">Modifying Identity Context</span>
+                    <button type="button" onClick={() => setEditingSuperadminId(null)} className="p-0.5 hover:bg-safai-surface-soft text-safai-text-faint rounded"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  {renderFormEngine('edit', superadmin.id)}
                 </div>
-              </div>
+              )}
             </div>
           );
         })}
@@ -347,19 +380,13 @@ export default function SuperadminManagement() {
       {filteredSuperadmins.length > 0 && (
         <div className="pt-2 text-center space-y-2">
           <p className="text-[10px] font-bold text-safai-text-faint">
-            {"Page "}
-            <b className="text-safai-text">{currentPage}</b>
-            {" of "}
-            <b>{totalPages}</b>
-            {" · "}
-            <b>{filteredSuperadmins.length}</b>
-            {" total superadmins"}
+            Page <b className="text-safai-text">{currentPage}</b> of <b>{totalPages}</b> &middot; <b>{filteredSuperadmins.length}</b> total superadmins
           </p>
           <div className="flex items-center justify-center gap-1.5">
             <button 
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
-              className="w-8 h-8 rounded-lg border border-safai-border bg-safai-surface flex items-center justify-center text-safai-text-dim disabled:opacity-35 transition tap-fx"
+              className="w-8 h-8 rounded-lg border border-safai-border bg-safai-surface flex items-center justify-center text-safai-text-dim disabled:opacity-35 transition"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -369,153 +396,12 @@ export default function SuperadminManagement() {
             <button 
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
-              className="w-8 h-8 rounded-lg border border-safai-border bg-safai-surface flex items-center justify-center text-safai-text-dim disabled:opacity-35 transition tap-fx"
+              className="w-8 h-8 rounded-lg border border-safai-border bg-safai-surface flex items-center justify-center text-safai-text-dim disabled:opacity-35 transition"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
-      )}
-
-      {/* ================= BOTTOM SHEET CONTAINER FORM: ADD / EDIT SUPERADMINS ================= */}
-      {formSheet.show && (
-        <>
-          <div className="absolute inset-0 bg-safai-text/40 backdrop-blur-sm z-[90] animate-in fade-in duration-200" onClick={() => setFormSheet({ show: false, mode: 'add', superadminId: null })} />
-          <div className="absolute left-0 right-0 bottom-0 bg-safai-surface border-t border-safai-border rounded-t-[26px] z-[91] p-4 space-y-4 shadow-2xl max-h-[92%] overflow-y-auto animate-in slide-in-from-bottom duration-300">
-            <div className="w-10 h-1 bg-safai-border rounded-full mx-auto" />
-            
-            <div className="flex justify-between items-center">
-              <button onClick={() => setFormSheet({ show: false, mode: 'add', superadminId: null })} className="flex items-center gap-1 text-[11px] font-bold text-safai-text-dim">
-                <ChevronLeft className="w-4 h-4" /> Back to Superadmins
-              </button>
-              <button onClick={() => setFormSheet({ show: false, mode: 'add', superadminId: null })} className="w-7 h-7 bg-safai-surface-soft border border-safai-border text-safai-text-dim rounded-lg flex items-center justify-center">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="flex gap-2.5 items-center">
-              <div className="w-10 h-10 bg-safai-primary-soft text-safai-primary rounded-xl flex items-center justify-center shadow-sm">
-                <User className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-black text-safai-text font-display">
-                  {formSheet.mode === 'edit' ? "Edit Superadmin" : "Add New Superadmin"}
-                </h2>
-                <p className="text-[10px] text-safai-text-faint font-medium">
-                  {formSheet.mode === 'edit' ? "Update superadmin account parameters" : "Create a secondary platform superadmin account"}
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleFormSubmit} className="space-y-3.5 pt-1">
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-safai-text-dim uppercase tracking-wider">
-                  Full Name <span className="text-safai-red">*</span>
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-safai-text-faint absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input type="text" required placeholder="Enter full name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text font-semibold focus:outline-none focus:border-safai-primary focus:bg-white" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-safai-text-dim uppercase tracking-wider">Email Address</label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-safai-text-faint absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input type="email" placeholder="Enter email address" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text font-semibold focus:outline-none focus:border-safai-primary focus:bg-white" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-safai-text-dim uppercase tracking-wider">
-                  Phone Number <span className="text-safai-red">*</span>
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-safai-text-faint absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input type="tel" required placeholder="10 digit phone number" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text font-semibold focus:outline-none focus:border-safai-primary focus:bg-white" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-safai-text-dim uppercase tracking-wider">Age</label>
-                  <input type="text" placeholder="Optional" value={formData.age} onChange={(e) => setFormData({ ...formData, age: e.target.value })} className="w-full px-3 py-2.5 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text font-semibold focus:outline-none focus:border-safai-primary focus:bg-white" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-safai-text-dim uppercase tracking-wider">Company</label>
-                  <div className="relative">
-                    <select 
-                      value={formData.isNewCompany ? "__new__" : formData.company}
-                      onChange={(e) => {
-                        const isNew = e.target.value === '__new__';
-                        setFormData({ ...formData, company: isNew ? '' : e.target.value, isNewCompany: isNew });
-                      }}
-                      className="w-full pl-3 pr-9 py-2.5 appearance-none bg-safai-surface-soft border border-safai-border rounded-xl text-xs font-bold text-safai-text focus:outline-none focus:border-safai-primary focus:bg-white"
-                    >
-                      <option value="">Select company</option>
-                      {Array.from(new Set([...baseCompanies, ...uniqueCompanies])).sort().map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                      <option value="__new__">+ Add new company…</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-safai-text-faint pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-
-              {formData.isNewCompany && (
-                <div className="space-y-1 animate-in fade-in duration-200">
-                  <label className="text-[10px] font-bold text-safai-primary uppercase">New Company Name</label>
-                  <div className="relative">
-                    <Building2 className="w-4 h-4 text-safai-primary absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input type="text" required placeholder="Enter new company name" value={formData.newCompanyName} onChange={(e) => setFormData({ ...formData, newCompanyName: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white border border-safai-primary rounded-xl text-xs text-safai-text font-semibold focus:outline-none" />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-3.5 pt-1">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-safai-text-dim uppercase tracking-wider">
-                    {formSheet.mode === 'edit' ? "New Password" : "Password"}{" "}
-                    {formSheet.mode === 'add' && <span className="text-safai-red">*</span>}
-                  </label>
-                  <input type="password" required={formSheet.mode === 'add'} placeholder="•••••" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-3 py-2.5 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text focus:outline-none focus:border-safai-primary focus:bg-white" />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-safai-text-dim uppercase tracking-wider">
-                    {formSheet.mode === 'edit' ? "Confirm New Password" : "Confirm Password"}{" "}
-                    {formSheet.mode === 'add' && <span className="text-safai-red">*</span>}
-                  </label>
-                  <input type="password" required={formSheet.mode === 'add'} placeholder="Re-enter secret password confirmation" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} className="w-full px-3 py-2.5 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text focus:outline-none focus:border-safai-primary focus:bg-white" />
-                  {formSheet.mode === 'edit' && (
-                    <span className="text-[9px] font-bold text-safai-text-faint block pl-0.5">Leave blank to retain current system password credentials</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-safai-text-faint tracking-wider uppercase">Role</label>
-                <div className="p-3 rounded-xl border border-safai-border bg-safai-surface-soft flex flex-col justify-center leading-tight">
-                  <div className="text-xs font-black text-safai-text">Superadmin</div>
-                  {formSheet.mode === 'edit' && <div className="text-[9px] font-medium text-safai-text-faint mt-0.5">Role level cannot be altered</div>}
-                </div>
-              </div>
-
-              <div className="sheet-divider h-px bg-safai-border my-4" />
-
-              <div className="flex gap-2.5 pb-2">
-                <button type="button" onClick={() => setFormSheet({ show: false, mode: 'add', superadminId: null })} className="flex-1 py-2.5 bg-safai-surface-soft text-safai-text font-bold text-xs rounded-xl border border-safai-border flex items-center justify-center gap-1">
-                  Cancel
-                </button>
-                <button type="submit" disabled={isSubmitting} className="flex-[1.5_1_0%] py-2.5 bg-gradient-to-br from-[#3B82F6] to-[#60A5FA] text-white font-black text-xs rounded-xl shadow-safai-glow flex items-center justify-center gap-1.5 uppercase tracking-wider disabled:opacity-75">
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{formSheet.mode === 'edit' ? "Update User" : "Create Account"}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </>
       )}
 
       {/* ================= BOTTOM SHEET COMPONENT: INFOPANEL PROFILE DETAILS OVERVIEW ================= */}
@@ -542,7 +428,7 @@ export default function SuperadminManagement() {
                 <h2 className="text-base font-black text-safai-text font-display truncate">Superadmin Details</h2>
               </div>
               <button 
-                onClick={() => { const target = profileSheet.superadmin; setProfileSheet({ show: false, superadmin: null }); setTimeout(() => openFormSheet('edit', target), 200); }}
+                onClick={() => { const target = profileSheet.superadmin; setProfileSheet({ show: false, superadmin: null }); setTimeout(() => startInlineEdit(target), 200); }}
                 className="flex items-center gap-1 bg-gradient-to-br from-[#3B82F6] to-[#60A5FA] text-white text-[10px] font-black px-2.5 py-1.5 rounded-xl shadow-sm hover:opacity-90 shrink-0"
               >
                 <Edit3 className="w-3 h-3" /> Edit Details
@@ -604,10 +490,10 @@ export default function SuperadminManagement() {
               </p>
             </div>
             <div className="flex gap-2.5 pt-1">
-              <button onClick={() => setDeleteDialog({ show: false, superadmin: null })} className="flex-1 py-2 bg-safai-surface-soft border border-safai-border text-safai-text font-bold text-xs rounded-xl transition tap-fx">
+              <button onClick={() => setDeleteDialog({ show: false, superadmin: null })} className="flex-1 py-2 bg-safai-surface-soft border border-safai-border text-safai-text font-bold text-xs rounded-xl transition">
                 Cancel
               </button>
-              <button onClick={executeDelete} className="flex-1 py-2 bg-gradient-to-r from-safai-red to-[#FF6B57] text-white font-bold text-xs rounded-xl shadow-md transition tap-fx">
+              <button onClick={executeDelete} className="flex-1 py-2 bg-gradient-to-r from-safai-red to-[#FF6B57] text-white font-bold text-xs rounded-xl shadow-md transition">
                 Delete
               </button>
             </div>
@@ -634,10 +520,10 @@ export default function SuperadminManagement() {
               </p>
             </div>
             <div className="flex gap-2.5 pt-1">
-              <button onClick={() => setStatusDialog({ show: false, superadmin: null })} className="flex-1 py-2 bg-safai-surface-soft border border-safai-border text-safai-text font-bold text-xs rounded-xl transition tap-fx">
+              <button onClick={() => setStatusDialog({ show: false, superadmin: null })} className="flex-1 py-2 bg-safai-surface-soft border border-safai-border text-safai-text font-bold text-xs rounded-xl transition">
                 Cancel
               </button>
-              <button onClick={executeStatusDisable} className="flex-1 py-2 bg-gradient-to-r from-[#F0A527] to-[#F7C15C] text-white font-bold text-xs rounded-xl shadow-md transition tap-fx">
+              <button onClick={executeStatusDisable} className="flex-1 py-2 bg-gradient-to-r from-[#F0A527] to-[#F7C15C] text-white font-bold text-xs rounded-xl shadow-md transition">
                 Disable
               </button>
             </div>
@@ -647,4 +533,101 @@ export default function SuperadminManagement() {
 
     </main>
   );
+
+  // ---- Sub-functional Shared Form Layout Router Engine ----
+  function renderFormEngine(mode, targetId = null) {
+    return (
+      <form onSubmit={(e) => handleFormSubmit(e, mode, targetId)} className="space-y-3 pt-1 text-left">
+        <div className="space-y-1">
+          <label className="text-[10px] font-extrabold text-safai-text-dim uppercase tracking-wider">Full Name *</label>
+          <div className="relative">
+            <User className="w-3.5 h-3.5 text-safai-text-faint absolute left-3 top-1/2 -translate-y-1/2" />
+            <input type="text" required placeholder="Enter full name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full pl-9 pr-3 py-2 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text font-semibold focus:outline-none focus:border-safai-primary focus:bg-white" />
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-[10px] font-extrabold text-safai-text-dim uppercase tracking-wider">Email Address</label>
+          <div className="relative">
+            <Mail className="w-3.5 h-3.5 text-safai-text-faint absolute left-3 top-1/2 -translate-y-1/2" />
+            <input type="email" placeholder="Enter email address" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full pl-9 pr-3 py-2 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text font-semibold focus:outline-none focus:border-safai-primary focus:bg-white" />
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-[10px] font-extrabold text-safai-text-dim uppercase tracking-wider">Phone Number *</label>
+          <div className="relative">
+            <Phone className="w-3.5 h-3.5 text-safai-text-faint absolute left-3 top-1/2 -translate-y-1/2" />
+            <input type="tel" required placeholder="10 digit phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full pl-9 pr-3 py-2 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text font-semibold focus:outline-none focus:border-safai-primary focus:bg-white" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="space-y-1">
+            <label className="text-[10px] font-extrabold text-safai-text-dim uppercase tracking-wider">Age</label>
+            <input type="text" placeholder="Optional" value={formData.age} onChange={(e) => setFormData({ ...formData, age: e.target.value })} className="w-full px-2.5 py-2 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text font-semibold focus:outline-none focus:border-safai-primary focus:bg-white" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-extrabold text-safai-text-dim uppercase tracking-wider">Company</label>
+            <div className="relative">
+              <select 
+                value={formData.isNewCompany ? "__new__" : formData.company}
+                onChange={(e) => {
+                  const isNew = e.target.value === '__new__';
+                  setFormData({ ...formData, company: isNew ? '' : e.target.value, isNewCompany: isNew });
+                }}
+                className="w-full pl-2.5 pr-8 py-2 appearance-none bg-safai-surface-soft border border-safai-border rounded-xl text-xs font-bold text-safai-text focus:outline-none focus:border-safai-primary focus:bg-white"
+              >
+                <option value="">Select company</option>
+                {Array.from(new Set([...baseCompanies, ...uniqueCompanies])).sort().map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+                <option value="__new__">+ Add new company…</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-safai-text-faint pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        {formData.isNewCompany && (
+          <div className="space-y-1 animate-in fade-in duration-200">
+            <label className="text-[9px] font-bold text-safai-primary uppercase">New Company Name</label>
+            <div className="relative">
+              <Building2 className="w-3.5 h-3.5 text-safai-primary absolute left-3 top-1/2 -translate-y-1/2" />
+              <input type="text" required placeholder="Enter new company name" value={formData.newCompanyName} onChange={(e) => setFormData({ ...formData, newCompanyName: e.target.value })} className="w-full pl-9 pr-3 py-2 bg-white border border-safai-primary rounded-xl text-xs text-safai-text font-semibold focus:outline-none" />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="space-y-1">
+            <label className="text-[10px] font-extrabold text-safai-text-dim uppercase tracking-wider">
+              {mode === 'edit' ? "New Password" : "Password"} {mode === 'add' && "*"}
+            </label>
+            <input type="password" required={mode === 'add'} placeholder="••••••" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-2.5 py-2 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text focus:outline-none focus:border-safai-primary focus:bg-white" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-extrabold text-safai-text-dim uppercase tracking-wider">
+              Confirm {mode === 'edit' && "New"} Password {mode === 'add' && "*"}
+            </label>
+            <input type="password" required={mode === 'add'} placeholder="Re-enter" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} className="w-full px-2.5 py-2 bg-safai-surface-soft border border-safai-border rounded-xl text-xs text-safai-text focus:outline-none focus:border-safai-primary focus:bg-white" />
+          </div>
+        </div>
+        
+        {mode === 'edit' && (
+          <span className="text-[8.5px] font-semibold text-safai-text-faint block pl-0.5 -mt-1">Leave password fields blank to keep existing.</span>
+        )}
+
+        <div className="flex gap-2 pt-2">
+          <button type="button" onClick={() => { setEditingSuperadminId(null); setShowAddInline(false); }} className="flex-1 py-2 bg-safai-surface-soft text-safai-text font-bold text-xs rounded-xl border border-safai-border transition">
+            Cancel
+          </button>
+          <button type="submit" disabled={isSubmitting} className="flex-1 py-2 bg-gradient-to-br from-[#3B82F6] to-[#60A5FA] text-white font-black text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5 uppercase tracking-wider disabled:opacity-75">
+            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            <span>{mode === 'edit' ? "Save" : "Deploy"}</span>
+          </button>
+        </div>
+      </form>
+    );
+  }
 }
